@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		364F86C72FB35F8E00420E64 /* alarmina.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = alarmina.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		364F86C72FB35F8E00420E64 /* calkitty.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = calkitty.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		364F86C92FB35F8E00420E64 /* alarmina */ = {
+		364F86C92FB35F8E00420E64 /* calkitty */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = alarmina;
+			path = calkitty;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		364F86BE2FB35F8E00420E64 = {
 			isa = PBXGroup;
 			children = (
-				364F86C92FB35F8E00420E64 /* alarmina */,
+				364F86C92FB35F8E00420E64 /* calkitty */,
 				364F86C82FB35F8E00420E64 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		364F86C82FB35F8E00420E64 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				364F86C72FB35F8E00420E64 /* alarmina.app */,
+				364F86C72FB35F8E00420E64 /* calkitty.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		364F86C62FB35F8E00420E64 /* alarmina */ = {
+		364F86C62FB35F8E00420E64 /* calkitty */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 364F86D72FB35F8F00420E64 /* Build configuration list for PBXNativeTarget "alarmina" */;
+			buildConfigurationList = 364F86D72FB35F8F00420E64 /* Build configuration list for PBXNativeTarget "calkitty" */;
 			buildPhases = (
 				364F86C32FB35F8E00420E64 /* Sources */,
 				364F86C42FB35F8E00420E64 /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				364F86C92FB35F8E00420E64 /* alarmina */,
+				364F86C92FB35F8E00420E64 /* calkitty */,
 			);
-			name = alarmina;
+			name = calkitty;
 			packageProductDependencies = (
 			);
-			productName = alarmina;
-			productReference = 364F86C72FB35F8E00420E64 /* alarmina.app */;
+			productName = calkitty;
+			productReference = 364F86C72FB35F8E00420E64 /* calkitty.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -78,14 +78,14 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2640;
-				LastUpgradeCheck = 2640;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					364F86C62FB35F8E00420E64 = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
 				};
 			};
-			buildConfigurationList = 364F86C22FB35F8E00420E64 /* Build configuration list for PBXProject "alarmina" */;
+			buildConfigurationList = 364F86C22FB35F8E00420E64 /* Build configuration list for PBXProject "calkitty" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				364F86C62FB35F8E00420E64 /* alarmina */,
+				364F86C62FB35F8E00420E64 /* calkitty */,
 			);
 		};
 /* End PBXProject section */
@@ -159,6 +159,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = H2MCB54VDW;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -184,6 +185,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -223,6 +225,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = H2MCB54VDW;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -241,6 +244,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -250,22 +254,26 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = calkitty/calkitty.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2MCB54VDW;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "CalKitty needs access to your calendars to display upcoming events.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = io.konkord.alarmina;
+				PRODUCT_BUNDLE_IDENTIFIER = io.konkord.calkitty;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -282,22 +290,26 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = calkitty/calkitty.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2MCB54VDW;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "CalKitty needs access to your calendars to display upcoming events.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = io.konkord.alarmina;
+				PRODUCT_BUNDLE_IDENTIFIER = io.konkord.calkitty;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -312,7 +324,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		364F86C22FB35F8E00420E64 /* Build configuration list for PBXProject "alarmina" */ = {
+		364F86C22FB35F8E00420E64 /* Build configuration list for PBXProject "calkitty" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				364F86D52FB35F8F00420E64 /* Debug */,
@@ -321,7 +333,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		364F86D72FB35F8F00420E64 /* Build configuration list for PBXNativeTarget "alarmina" */ = {
+		364F86D72FB35F8F00420E64 /* Build configuration list for PBXNativeTarget "calkitty" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				364F86D82FB35F8F00420E64 /* Debug */,
