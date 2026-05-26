@@ -4,6 +4,10 @@ DerivedData/
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
 xcuserdata/
+*.xcarchive
+
+# Release artifacts
+*.dmg
 
 # Swift Package Manager
 .build/

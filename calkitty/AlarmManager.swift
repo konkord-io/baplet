@@ -112,7 +112,9 @@ final class AlarmManager {
             guard now >= alarmTime, now < event.endDate else { continue }
 
             if activeAlerts.contains(eventID) {
-                AlertService.playAlarmSound()
+                if settingsStore.soundEnabled {
+                    AlertService.playAlarmSound()
+                }
             } else {
                 fireAlarm(for: event, settingsStore: settingsStore)
             }
@@ -121,7 +123,7 @@ final class AlarmManager {
     }
 
     /// Presents the configured alert style for the given event and marks it as actively alerting.
-    /// Sound is always played regardless of the chosen visual style.
+    /// Sound is played only when `soundEnabled` is true.
     private func fireAlarm(for event: EKEvent, settingsStore: SettingsStore) {
         let eventID = event.eventIdentifier ?? ""
         activeAlerts.insert(eventID)
@@ -132,7 +134,9 @@ final class AlarmManager {
         let timeString = "\(formatter.string(from: event.startDate)) \u{2013} \(formatter.string(from: event.endDate))"
         let meetingLink = AlertService.extractMeetingLink(from: event)
 
-        AlertService.playAlarmSound()
+        if settingsStore.soundEnabled {
+            AlertService.playAlarmSound()
+        }
 
         let style = settingsStore.alertStyle
 

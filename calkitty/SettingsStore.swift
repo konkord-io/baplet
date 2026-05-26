@@ -8,7 +8,7 @@
 import Foundation
 
 /// The visual style of alert to display when an alarm triggers.
-/// All styles play a sound; this controls the visual presentation.
+/// This controls the visual presentation; sound is controlled separately via `soundEnabled`.
 enum AlertStyle: String, CaseIterable, Identifiable {
     case popupDialog
     case fullScreenGlassmorphic
@@ -58,6 +58,11 @@ final class SettingsStore {
         didSet { defaults.set(alertStyle.rawValue, forKey: Keys.alertStyle) }
     }
 
+    /// Whether to play a sound when an alarm fires.
+    var soundEnabled: Bool {
+        didSet { defaults.set(soundEnabled, forKey: Keys.soundEnabled) }
+    }
+
     /// How many minutes before an event's start time to trigger the alarm.
     var minutesBefore: Int {
         didSet { defaults.set(minutesBefore, forKey: Keys.minutesBefore) }
@@ -80,6 +85,7 @@ final class SettingsStore {
         static let alertStyle = "alertStyle"
         /// Legacy key kept for migration from older versions.
         static let legacyAlertType = "alertType"
+        static let soundEnabled = "soundEnabled"
         static let minutesBefore = "minutesBefore"
         static let daysToShow = "daysToShow"
         static let disabledEventAlarms = "disabledEventAlarms"
@@ -100,6 +106,13 @@ final class SettingsStore {
             defaults.removeObject(forKey: Keys.legacyAlertType)
         } else {
             self.alertStyle = .popupDialog
+        }
+
+        // Defaults to true when the key has never been set (object is nil).
+        if defaults.object(forKey: Keys.soundEnabled) != nil {
+            self.soundEnabled = defaults.bool(forKey: Keys.soundEnabled)
+        } else {
+            self.soundEnabled = true
         }
 
         let storedMinutesBefore = defaults.integer(forKey: Keys.minutesBefore)

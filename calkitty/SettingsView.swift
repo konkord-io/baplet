@@ -135,6 +135,10 @@ private struct AlertsPane: View {
                 }
             }
 
+            Section("Sound") {
+                Toggle("Play sound on alert", isOn: $settings.soundEnabled)
+            }
+
             Section("Timing") {
                 Stepper(
                     "Alert \(settingsStore.minutesBefore) minutes before event",
@@ -171,7 +175,9 @@ private struct AlertsPane: View {
             url: URL(string: "https://meet.google.com/abc-defg-hij")!
         )
 
-        AlertService.playAlarmSound()
+        if settingsStore.soundEnabled {
+            AlertService.playAlarmSound()
+        }
 
         let style = settingsStore.alertStyle
 

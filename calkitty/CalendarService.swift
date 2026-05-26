@@ -28,6 +28,11 @@ final class CalendarService {
     private let store = EKEventStore()
     private var changeObserver: (any NSObjectProtocol)?
 
+    /// Last-used filter parameters, retained so notification-driven refreshes
+    /// can reapply the same calendar/day filters without external input.
+    private var lastEnabledCalendarIDs: Set<String> = []
+    private var lastDaysToShow: Int = 2
+
     /// Registers an observer for EKEventStoreChanged notifications so the event list
     /// refreshes automatically when calendars or events change externally.
     init() {
@@ -36,7 +41,8 @@ final class CalendarService {
             object: store,
             queue: .main
         ) { [weak self] _ in
-            self?.refresh()
+            guard let self else { return }
+            self.refresh(enabledCalendarIDs: self.lastEnabledCalendarIDs, daysToShow: self.lastDaysToShow)
         }
     }
 
@@ -68,21 +74,28 @@ final class CalendarService {
     }
 
     /// Fetches events from now through the end of the specified number of days.
-    /// When `enabledCalendarIDs` is provided and non-empty, only events from those calendars are included.
-    func fetchEvents(enabledCalendarIDs: Set<String>? = nil, daysToShow: Int = 2) {
+    /// Only events from calendars in `enabledCalendarIDs` are included.
+    /// When the set is empty, no events are returned.
+    func fetchEvents(enabledCalendarIDs: Set<String> = [], daysToShow: Int = 2) {
+        lastEnabledCalendarIDs = enabledCalendarIDs
+        lastDaysToShow = daysToShow
+
+        guard !enabledCalendarIDs.isEmpty else {
+            events = []
+            return
+        }
+
         let now = Date()
         let calendar = Calendar.current
         let endDate = calendar.startOfDay(for: calendar.date(byAdding: .day, value: daysToShow, to: now)!)
 
-        let targetCalendars: [EKCalendar]?
-        if let enabledIDs = enabledCalendarIDs, !enabledIDs.isEmpty {
-            let filtered = calendars.filter { enabledIDs.contains($0.calendarIdentifier) }
-            targetCalendars = filtered.isEmpty ? nil : filtered
-        } else {
-            targetCalendars = nil
+        let filtered = calendars.filter { enabledCalendarIDs.contains($0.calendarIdentifier) }
+        guard !filtered.isEmpty else {
+            events = []
+            return
         }
 
-        let predicate = store.predicateForEvents(withStart: now, end: endDate, calendars: targetCalendars)
+        let predicate = store.predicateForEvents(withStart: now, end: endDate, calendars: filtered)
         events = store.events(matching: predicate).sorted { $0.startDate < $1.startDate }
     }
 
@@ -97,7 +110,7 @@ final class CalendarService {
     }
 
     /// Reloads calendars and re-fetches events. Call after external calendar changes.
-    func refresh(enabledCalendarIDs: Set<String>? = nil, daysToShow: Int = 2) {
+    func refresh(enabledCalendarIDs: Set<String> = [], daysToShow: Int = 2) {
         store.refreshSourcesIfNecessary()
         loadCalendars()
         fetchEvents(enabledCalendarIDs: enabledCalendarIDs, daysToShow: daysToShow)
