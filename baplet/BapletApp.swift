@@ -33,7 +33,7 @@ struct BapletApp: App {
                 .environment(settingsStore)
                 .environment(alarmManager)
         }
-        .defaultSize(width: 580, height: 420)
-        .windowResizability(.contentMinSize)
+        .windowResizability(.contentSize)
+        .windowLevel(.floating)
     }
 }
