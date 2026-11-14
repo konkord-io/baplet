@@ -17,7 +17,7 @@ struct GlassmorphicAlertView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            Image("baplet")
+            Image("goldfish")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(height: 120)

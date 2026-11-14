@@ -17,7 +17,7 @@ struct BoldMinimalAlertView: View {
 
     var body: some View {
         ZStack {
-            Image("baplet")
+            Image("goldfish")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(height: 80)

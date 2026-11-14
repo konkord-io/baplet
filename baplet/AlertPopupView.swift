@@ -28,7 +28,7 @@ struct AlertPopupView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image("baplet")
+            Image("goldfish")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(height: 200)
