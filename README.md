@@ -40,7 +40,7 @@ On first launch the app will request calendar access. Grant full access for all 
 
 ## Releasing
 
-Every pull request and every push to `main` is built and tested by GitHub Actions (`.github/workflows/ci.yml`). Releases are made by pushing a version tag (`.github/workflows/release.yml`).
+Every pull request and push to `main` that changes code is built and tested by GitHub Actions (`.github/workflows/ci.yml`). Changes to docs or the website skip it. Releases are made by pushing a version tag (`.github/workflows/release.yml`).
 
 ### Make a release
 
