@@ -41,6 +41,16 @@ Startup (access request, event load, `AlarmManager.start`, and when no calendars
 
 Alert views: `AlertPopupView` and every full-screen style take `AlertProps`; `FullScreenAlertRouter` picks the full-screen view for the chosen `AlertStyle`. A new style = new `AlertStyle` case + view + router branch.
 
+## Releases
+
+Run `/release` (`.claude/skills/release/SKILL.md`) for the step-by-step routine. Rules that the in-app updater (`UpdateService`) depends on:
+
+- Tags are `vX.Y.Z` (semver). Published versions are never reused; a fix ships as the next patch.
+- Every release must carry an asset named exactly `Baplet.dmg` with GitHub's `sha256:` digest. The updater installs only when the download matches that digest. `release.yml` uploads it next to `Baplet-X.Y.Z.dmg`; don't rename or drop it.
+- The release body's "What's new" section is shown to users in the update window, so write it for them.
+- 0.1.0 has no updater; anyone on it must download a newer version by hand once.
+- Test updating with a release build installed in `/Applications`. Debug and development builds refuse to install updates in place. In-app updating was first verified end to end from 0.2.0 to 0.2.1 on 2026-11-15.
+
 ## Website and README
 
 `site/` is the public site `baplet.konkord.io`, deployed by `.github/workflows/pages.yml` when `site/` changes on main. Its Download button and the README's download link point at `releases/latest/download/Baplet.dmg`, so the version follows releases automatically. Everything else on the site is hand-written and drifts unless kept in step.
