@@ -111,6 +111,21 @@ final class CalendarService {
         return Array(store.events(matching: predicate).sorted { $0.startDate < $1.startDate }.prefix(limit))
     }
 
+    /// Returns all of today's events (midnight to midnight, including ones already over) from
+    /// the given calendars: all-day events first, then by start time. Used by the Today panel.
+    func todaysEvents(enabledCalendarIDs: Set<String>) -> [EKEvent] {
+        let selected = calendars.filter { enabledCalendarIDs.contains($0.calendarIdentifier) }
+        guard !selected.isEmpty else { return [] }
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: Date())
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
+        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: selected)
+        return store.events(matching: predicate).sorted {
+            if $0.isAllDay != $1.isAllDay { return $0.isAllDay }
+            return $0.startDate < $1.startDate
+        }
+    }
+
     /// Groups the current events by calendar day, returning tuples of (day start date, events).
     /// Days are labeled "Today", "Tomorrow", or a date string in the UI layer.
     func eventsByDay() -> [(day: Date, events: [EKEvent])] {

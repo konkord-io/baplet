@@ -6,6 +6,7 @@
 //
 
 import EventKit
+import KeyboardShortcuts
 import SwiftUI
 
 /// Settings window using a macOS System Settings-style sidebar navigation.
@@ -14,6 +15,7 @@ struct SettingsView: View {
         case calendars
         case alerts
         case meetings
+        case shortcuts
         case about
 
         /// Display label for the sidebar row.
@@ -22,6 +24,7 @@ struct SettingsView: View {
             case .calendars: "Calendars"
             case .alerts: "Alerts"
             case .meetings: "Meetings"
+            case .shortcuts: "Shortcuts"
             case .about: "About"
             }
         }
@@ -32,6 +35,7 @@ struct SettingsView: View {
             case .calendars: "calendar"
             case .alerts: "bell"
             case .meetings: "video"
+            case .shortcuts: "command"
             case .about: "info.circle"
             }
         }
@@ -54,6 +58,8 @@ struct SettingsView: View {
                 AlertsPane()
             case .meetings:
                 MeetingsPane()
+            case .shortcuts:
+                ShortcutsPane()
             case .about:
                 AboutPane()
             }
@@ -247,6 +253,38 @@ private struct MeetingsPane: View {
         let icon = NSWorkspace.shared.icon(forFile: browser.appURL.path)
         icon.size = NSSize(width: 16, height: 16)
         return icon
+    }
+}
+
+/// Pane for recording the global shortcut that shows today's events from any app, and for
+/// choosing what Return does in that list.
+private struct ShortcutsPane: View {
+    @Environment(SettingsStore.self) private var settingsStore
+
+    var body: some View {
+        @Bindable var settings = settingsStore
+
+        Form {
+            Section {
+                SettingsHelpText(TodayShortcutHelp.text)
+            }
+            Section {
+                KeyboardShortcuts.Recorder("Show today's events", name: .showToday)
+            }
+            Section {
+                Picker("Return in today's events", selection: $settings.todayReturnAction) {
+                    ForEach(TodayReturnAction.allCases) { action in
+                        Text(action.label).tag(action)
+                    }
+                }
+            } footer: {
+                Text("In the list, ↑ and ↓ pick an event, Return does this, ⌘Return does the other, and D turns the alarm on or off. Join meeting opens Calendar when the event has no meeting link.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .navigationTitle("Shortcuts")
     }
 }
 

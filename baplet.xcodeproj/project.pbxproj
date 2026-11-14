@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B4A1E0012FC0000000000001 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = B4A1E0012FC0000000000003 /* KeyboardShortcuts */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		364F86C72FB35F8E00420E64 /* Baplet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Baplet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B4A1E0012FC0000000000001 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = baplet;
 			packageProductDependencies = (
+				B4A1E0012FC0000000000003 /* KeyboardShortcuts */,
 			);
 			productName = baplet;
 			productReference = 364F86C72FB35F8E00420E64 /* Baplet.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 364F86BE2FB35F8E00420E64;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				B4A1E0012FC0000000000002 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 364F86C82FB35F8E00420E64 /* Products */;
 			projectDirPath = "";
@@ -341,6 +350,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		B4A1E0012FC0000000000002 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = exactVersion;
+				version = 3.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B4A1E0012FC0000000000003 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B4A1E0012FC0000000000002 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 364F86BF2FB35F8E00420E64 /* Project object */;
 }

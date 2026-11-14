@@ -5,6 +5,7 @@
 
 import AppKit
 import EventKit
+import KeyboardShortcuts
 import SwiftUI
 
 /// The always-visible menu bar item: the Baplet "b" template icon (faded while alarms are
@@ -35,11 +36,16 @@ struct MenuBarLabel: View {
         }
     }
 
-    /// Runs once at launch: requests calendar access if needed, loads calendars and events,
-    /// and starts the alarm timer so alarms fire without the menu ever being opened.
+    /// Runs once at launch: registers the global Today shortcut, requests calendar access if
+    /// needed, loads calendars and events, and starts the alarm timer so alarms fire without
+    /// the menu ever being opened.
     /// When access is granted but no calendars are selected, it opens the welcome guide on a
     /// fresh install, or Settings if the guide was already finished.
     private func startUp() async {
+        KeyboardShortcuts.onKeyUp(for: .showToday) { [calendarService, settingsStore] in
+            TodayPanel.toggle(calendarService: calendarService, settingsStore: settingsStore)
+        }
+
         if calendarService.authorizationStatus == .notDetermined {
             await calendarService.requestAccess()
         }

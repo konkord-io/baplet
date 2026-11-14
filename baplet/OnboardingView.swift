@@ -4,20 +4,22 @@
 //
 
 import EventKit
+import KeyboardShortcuts
 import SwiftUI
 
-/// The welcome guide: Welcome → Calendars → Theme → Finish. Shown on a fresh install when no
+/// The welcome guide: Welcome → Calendars → Theme → Shortcut (optional) → Finish. Shown on a fresh install when no
 /// calendars are selected, and reopened from Settings → About. Finishing it marks onboarding
 /// as completed; closing the window early leaves it pending for the next launch.
 struct OnboardingView: View {
     /// The guide's pages, in order.
     enum Step: Int, CaseIterable {
-        case welcome, calendars, theme, finish
+        case welcome, calendars, theme, shortcut, finish
     }
 
     @Environment(SettingsStore.self) private var settingsStore
     @Environment(\.dismissWindow) private var dismissWindow
     @State private var step: Step = .welcome
+    @State private var hasTodayShortcut = KeyboardShortcuts.getShortcut(for: .showToday) != nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,6 +28,7 @@ struct OnboardingView: View {
                 case .welcome: OnboardingWelcomeStep()
                 case .calendars: OnboardingCalendarsStep()
                 case .theme: OnboardingThemeStep()
+                case .shortcut: OnboardingShortcutStep(hasShortcut: $hasTodayShortcut)
                 case .finish: OnboardingFinishStep()
                 }
             }
@@ -74,6 +77,7 @@ struct OnboardingView: View {
         switch step {
         case .welcome: "Get Started"
         case .calendars, .theme: "Next"
+        case .shortcut: hasTodayShortcut ? "Next" : "Skip for Now"
         case .finish: "Finish"
         }
     }
@@ -392,7 +396,31 @@ struct AlertStylePreview: View {
     )
 }
 
-/// Step 4: where to find Baplet from now on.
+/// Step 4 (optional): record the global shortcut for the Today list. The primary button reads
+/// "Skip for Now" until a shortcut is recorded.
+private struct OnboardingShortcutStep: View {
+    @Binding var hasShortcut: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Add a shortcut for today's events")
+                .font(.title2)
+                .fontWeight(.bold)
+            SettingsHelpText(TodayShortcutHelp.text)
+            Form {
+                KeyboardShortcuts.Recorder("Show today's events", name: .showToday) { shortcut in
+                    hasShortcut = shortcut != nil
+                }
+            }
+            .formStyle(.grouped)
+            .scrollDisabled(true)
+            .frame(height: 80)
+            SettingsHelpText("You can skip this and add or change it later in Settings → Shortcuts.")
+        }
+    }
+}
+
+/// Step 5: where to find Baplet from now on.
 private struct OnboardingFinishStep: View {
     var body: some View {
         VStack(spacing: 18) {

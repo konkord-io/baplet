@@ -101,10 +101,12 @@ enum AlertService {
             .appendingPathComponent("baplet-event.ics")
         do {
             try ics.write(to: tempURL, atomically: true, encoding: .utf8)
+            FocusHandoff.prepare(forAppOpening: tempURL)
             NSWorkspace.shared.open(tempURL)
         } catch {
             // Fall back to just opening Calendar.app
             if let calendarURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iCal") {
+                FocusHandoff.prepare(forBundleID: "com.apple.iCal")
                 NSWorkspace.shared.open(calendarURL)
             }
         }
