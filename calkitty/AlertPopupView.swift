@@ -62,7 +62,7 @@ struct AlertPopupView: View {
                         Button("\(minutes) min") { onSnooze(minutes) }
                     }
                 } label: {
-                    Text("Snooze")
+                    Text("Snooze 5m")
                 } primaryAction: {
                     onSnooze(5)
                 }

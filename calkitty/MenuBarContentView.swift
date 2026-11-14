@@ -62,6 +62,15 @@ struct MenuBarContentView: View {
             .buttonStyle(.borderless)
 
             Button {
+                settingsStore.alarmsPaused.toggle()
+                alarmManager.recheckNow()
+            } label: {
+                Image(systemName: settingsStore.alarmsPaused ? "bell.slash" : "bell")
+            }
+            .buttonStyle(.borderless)
+            .help(settingsStore.alarmsPaused ? "Resume alarms" : "Pause alarms")
+
+            Button {
                 openWindow(id: "settings")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     NSApp.activate(ignoringOtherApps: true)

@@ -175,6 +175,13 @@ private struct AlertsPane: View {
             url: URL(string: "https://meet.google.com/abc-defg-hij")!
         )
 
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        let now = Date()
+        let mockEnd = now.addingTimeInterval(30 * 60)
+        let timeString = "Now \(formatter.string(from: now)) \u{00b7} \(formatter.string(from: now)) \u{2013} \(formatter.string(from: mockEnd))"
+
         if settingsStore.soundEnabled {
             AlertService.playAlarmSound()
         }
@@ -185,7 +192,7 @@ private struct AlertsPane: View {
         case .popupDialog:
             AlertService.showPopupAlert(
                 title: "Test Event",
-                time: "Now \u{2013} In 30 minutes",
+                time: timeString,
                 location: "Conference Room A",
                 calendarName: "Work",
                 meetingLink: mockMeetingLink,
@@ -198,7 +205,7 @@ private struct AlertsPane: View {
             AlertService.showFullScreenAlert(
                 style: style,
                 title: "Test Event",
-                time: "Now \u{2013} In 30 minutes",
+                time: timeString,
                 location: "Conference Room A",
                 calendarName: "Work",
                 meetingLink: mockMeetingLink,

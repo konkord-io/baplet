@@ -63,6 +63,11 @@ final class SettingsStore {
         didSet { defaults.set(soundEnabled, forKey: Keys.soundEnabled) }
     }
 
+    /// Whether alarm notifications are temporarily paused.
+    var alarmsPaused: Bool {
+        didSet { defaults.set(alarmsPaused, forKey: Keys.alarmsPaused) }
+    }
+
     /// How many minutes before an event's start time to trigger the alarm.
     var minutesBefore: Int {
         didSet { defaults.set(minutesBefore, forKey: Keys.minutesBefore) }
@@ -86,6 +91,7 @@ final class SettingsStore {
         /// Legacy key kept for migration from older versions.
         static let legacyAlertType = "alertType"
         static let soundEnabled = "soundEnabled"
+        static let alarmsPaused = "alarmsPaused"
         static let minutesBefore = "minutesBefore"
         static let daysToShow = "daysToShow"
         static let disabledEventAlarms = "disabledEventAlarms"
@@ -113,6 +119,12 @@ final class SettingsStore {
             self.soundEnabled = defaults.bool(forKey: Keys.soundEnabled)
         } else {
             self.soundEnabled = true
+        }
+
+        if defaults.object(forKey: Keys.alarmsPaused) != nil {
+            self.alarmsPaused = defaults.bool(forKey: Keys.alarmsPaused)
+        } else {
+            self.alarmsPaused = false
         }
 
         let storedMinutesBefore = defaults.integer(forKey: Keys.minutesBefore)

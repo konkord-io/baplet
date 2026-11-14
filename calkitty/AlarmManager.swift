@@ -13,6 +13,7 @@ enum MenuBarStatus {
     case idle
     case upcoming(minutesLeft: Int)
     case active
+    case paused
 
     /// The SF Symbol name for this status.
     var icon: String {
@@ -20,6 +21,7 @@ enum MenuBarStatus {
         case .idle: "bell"
         case .upcoming: "bell.badge"
         case .active: "bell.badge.fill"
+        case .paused: "bell.slash"
         }
     }
 
@@ -29,6 +31,7 @@ enum MenuBarStatus {
         case .idle: nil
         case .upcoming(let minutes): "\(minutes)m"
         case .active: "NOW"
+        case .paused: nil
         }
     }
 }
@@ -73,6 +76,11 @@ final class AlarmManager {
         }
     }
 
+    /// Forces an immediate alarm check cycle, updating the menu bar icon right away.
+    func recheckNow() {
+        checkAlarms()
+    }
+
     /// Stops the alarm check timer. Call when the app is shutting down.
     func stop() {
         timer?.invalidate()
@@ -91,6 +99,8 @@ final class AlarmManager {
         cleanupStaleEntries(events: calendarService.events, now: now)
         dismissedAlarms = dismissedAlarms.filter { !settingsStore.isAlarmEnabled(eventID: $0) }
         updateMenuBarStatus(events: calendarService.events, now: now, settingsStore: settingsStore)
+
+        guard !settingsStore.alarmsPaused else { return }
 
         for event in calendarService.events {
             guard !event.isAllDay else { continue }
@@ -131,7 +141,8 @@ final class AlarmManager {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         formatter.dateStyle = .none
-        let timeString = "\(formatter.string(from: event.startDate)) \u{2013} \(formatter.string(from: event.endDate))"
+        let nowString = formatter.string(from: Date())
+        let timeString = "Now \(nowString) \u{00b7} \(formatter.string(from: event.startDate)) \u{2013} \(formatter.string(from: event.endDate))"
         let meetingLink = AlertService.extractMeetingLink(from: event)
 
         if settingsStore.soundEnabled {
@@ -195,9 +206,14 @@ final class AlarmManager {
     }
 
     /// Updates the menu bar icon status based on the nearest upcoming non-all-day event.
-    /// Shows "NOW" during an active event, a countdown for upcoming events within the lead time,
-    /// or idle when nothing is imminent.
+    /// Shows bell.slash when paused, "NOW" during an active event, a countdown for
+    /// upcoming events within the lead time, or idle when nothing is imminent.
     private func updateMenuBarStatus(events: [EKEvent], now: Date, settingsStore: SettingsStore) {
+        if settingsStore.alarmsPaused {
+            menuBarStatus = .paused
+            return
+        }
+
         let leadSeconds = Double(settingsStore.minutesBefore) * 60
 
         for event in events {

@@ -29,8 +29,10 @@ struct alarminaApp: App {
                         Text(label)
                             .monospacedDigit()
                     }
+                    .frame(minWidth: 40, alignment: .leading)
                 } else {
                     Image(systemName: alarmManager.menuBarStatus.icon)
+                        .frame(minWidth: 20)
                 }
             }
         }

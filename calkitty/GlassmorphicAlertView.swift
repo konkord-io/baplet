@@ -75,68 +75,90 @@ struct GlassmorphicAlertView: View {
         }
     }
 
-    /// Snooze button with a blue-to-purple gradient background.
-    /// Click opens a dropdown with all snooze durations.
+    /// Snooze split button: click snoozes for 5 min, dropdown arrow shows all durations.
     private var snoozeButton: some View {
-        Menu {
-            ForEach(props.snoozeDurations, id: \.self) { minutes in
-                Button("\(minutes) min") { props.onSnooze(minutes) }
+        HStack(spacing: 0) {
+            Button { props.onSnooze(5) } label: {
+                Text("Snooze 5m")
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
             }
-        } label: {
-            HStack(spacing: 6) {
-                Text("Snooze")
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(.white.opacity(0.3))
+                .frame(width: 1, height: 20)
+
+            Menu {
+                ForEach(props.snoozeDurations, id: \.self) { minutes in
+                    Button("\(minutes) min") { props.onSnooze(minutes) }
+                }
+            } label: {
                 Image(systemName: "chevron.down")
                     .font(.caption2)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
             }
-            .fontWeight(.semibold)
-            .foregroundStyle(.white)
-            .frame(minWidth: 120, minHeight: 44)
-            .background(
-                LinearGradient(
-                    colors: [Color.blue, Color.purple],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .background(
+            LinearGradient(
+                colors: [Color.blue, Color.purple],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    /// Dismiss button with a glass-like semi-transparent background.
-    /// Click opens a dropdown with dismiss, join meeting, and open-in-Calendar options.
+    /// Dismiss split button: click dismisses, dropdown arrow shows join-meeting and open-in-Calendar.
     private var dismissButton: some View {
-        Menu {
-            Button("Dismiss") {
-                props.onDismiss()
-            }
-
-            if let meetingLink = props.meetingLink {
-                Button {
-                    props.onDismiss()
-                    NSWorkspace.shared.open(meetingLink.url)
-                } label: {
-                    Label("Dismiss and join \(meetingLink.serviceName)", systemImage: meetingLink.icon)
-                }
-            }
-
-            Button {
-                props.onOpenInCalendar()
-            } label: {
-                Label("Dismiss and open in Calendar", systemImage: "calendar")
-            }
-        } label: {
-            HStack(spacing: 6) {
+        HStack(spacing: 0) {
+            Button { props.onDismiss() } label: {
                 Text("Dismiss")
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Rectangle()
+                .fill(.white.opacity(0.3))
+                .frame(width: 1, height: 20)
+
+            Menu {
+                if let meetingLink = props.meetingLink {
+                    Button {
+                        props.onDismiss()
+                        NSWorkspace.shared.open(meetingLink.url)
+                    } label: {
+                        Label("Dismiss and join \(meetingLink.serviceName)", systemImage: meetingLink.icon)
+                    }
+                }
+
+                Button {
+                    props.onOpenInCalendar()
+                } label: {
+                    Label("Dismiss and open in Calendar", systemImage: "calendar")
+                }
+            } label: {
                 Image(systemName: "chevron.down")
                     .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
             }
-            .fontWeight(.semibold)
-            .foregroundStyle(.white.opacity(0.9))
-            .frame(minWidth: 120, minHeight: 44)
-            .background(.white.opacity(0.12))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .background(.white.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
