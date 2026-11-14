@@ -291,7 +291,8 @@ private struct ShortcutsPane: View {
     }
 }
 
-/// Pane with the app logo, name, version, creator and copyright, plus credits for any
+/// Pane with the app logo, name, version, creator, copyright, Baplet's own MIT licence and
+/// GitHub link, plus credits for any
 /// bundled open-source packages (that section is hidden while there are none).
 private struct AboutPane: View {
     @Environment(\.openWindow) private var openWindow
@@ -317,6 +318,15 @@ private struct AboutPane: View {
                     Text(Self.infoValue("NSHumanReadableCopyright"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text("Licensed under the \(OpenSourcePackage.baplet.license) License")
+                        Button("View License") { licenseShown = .baplet }
+                            .buttonStyle(.link)
+                        Text("·")
+                        Link("GitHub", destination: OpenSourcePackage.baplet.url)
+                    }
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
                     Button("Show Welcome Guide") {
                         openWindow.openWelcome()
                     }

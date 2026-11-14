@@ -10,7 +10,13 @@ macOS menu bar app (SwiftUI, `MenuBarExtra`) that fires alarm alerts before cale
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project baplet.xcodeproj -scheme baplet -configuration Debug build
 ```
 
-No test target exists. Verify changes by building, then running the app (`/run`). Launch the built app with `open` (add `--stdout`/`--stderr <file>` to capture `NSLog`); executing the binary directly makes the terminal the TCC-responsible process, so calendar status comes back as the terminal's. The app's prefs live in `~/Library/Preferences/io.konkord.baplet.plist`; read them by path (`defaults read ~/Library/Preferences/io.konkord.baplet.plist`), because `defaults read io.konkord.baplet` resolves to the old sandbox container while it exists. Settings from the sandboxed era sit in `~/Library/Containers/io.konkord.baplet/`; `SettingsStore` copies them over once on first launch. After editing a plist by hand, `killall -u $USER cfprefsd` or the app keeps reading cached values. Release pipeline: `scripts/release.sh` (archive → Developer ID export → DMG → notarize → staple).
+Unit tests (Swift Testing, target `bapletTests`, hosted by the app, which skips its startup under tests via `AppEnvironment.isRunningTests`) run with:
+
+```sh
+pkill -x Baplet; DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild test -project baplet.xcodeproj -scheme baplet -destination 'platform=macOS'
+```
+
+They cover pure logic only (meeting links, browser profiles, Today selection, alarm keys, settings migrations). Check UI changes by running the app (`/run`). Launch the built app with `open` (add `--stdout`/`--stderr <file>` to capture `NSLog`); executing the binary directly makes the terminal the TCC-responsible process, so calendar status comes back as the terminal's. The app's prefs live in `~/Library/Preferences/io.konkord.baplet.plist`; read them by path (`defaults read ~/Library/Preferences/io.konkord.baplet.plist`), because `defaults read io.konkord.baplet` resolves to the old sandbox container while it exists. Settings from the sandboxed era sit in `~/Library/Containers/io.konkord.baplet/`; `SettingsStore` copies them over once on first launch. After editing a plist by hand, `killall -u $USER cfprefsd` or the app keeps reading cached values. Release pipeline: `scripts/release.sh` (archive → Developer ID export → DMG → notarize → staple).
 
 ## Architecture
 
@@ -40,3 +46,4 @@ Alert views: `AlertPopupView` and every full-screen style take `AlertProps`; `Fu
 - Bundle ID `io.konkord.baplet`, team `H2MCB54VDW`. Changing the bundle ID resets users' `UserDefaults` and calendar permission.
 - `design/` holds the untouched original artwork (logo SVG/PNG, menu bar PDF, alert image). The asset catalog has working copies (some downscaled). Keep every original and every image asset, even ones the code no longer references. When swapping an image, only change the references.
 - Adding a third-party dependency means adding its entry (name, license, URL, full license text) to `OpenSourcePackage.all` in `OpenSourcePackages.swift`. The About tab credits it from there and shows its "Open Source" section only when that list is non-empty.
+- Baplet is MIT licensed. `LICENSE` at the repo root and `OpenSourcePackage.baplet.licenseText` (shown in About) must stay identical.
