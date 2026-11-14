@@ -15,10 +15,11 @@ extension EKEvent {
     /// Identifies this one occurrence for per-event alarm state (disabled, snoozed, alerting).
     /// Occurrences of a recurring event share `eventIdentifier`, so the start date is added;
     /// otherwise switching off one occurrence would silence the whole series. Nil when EventKit
-    /// has no identifier for the event, in which case it gets no alarm controls.
+    /// has no identifier for the event, in which case it gets no alarm controls. Demo events are
+    /// never saved and have no identifier, so demo mode uses the title instead.
     var alarmKey: String? {
-        guard let eventIdentifier, let startDate else { return nil }
-        return EventAlarmKey.make(eventID: eventIdentifier, start: startDate)
+        guard let startDate, let id = eventIdentifier ?? (DemoMode.isEnabled ? title : nil) else { return nil }
+        return EventAlarmKey.make(eventID: id, start: startDate)
     }
 
     /// The event's start and end time, e.g. "09:30 – 10:00", as shown in event rows.

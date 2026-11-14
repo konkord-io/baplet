@@ -66,7 +66,7 @@ struct SettingsView: View {
         }
         .frame(width: 580, height: 420)
         .onAppear {
-            selectedPane = .calendars
+            selectedPane = DemoMode.scene?.settingsPane.flatMap(SettingsPane.init(rawValue:)) ?? .calendars
         }
     }
 }
@@ -292,13 +292,17 @@ private struct ShortcutsPane: View {
 }
 
 /// Pane with the app logo, name, version, creator, copyright, Baplet's own MIT licence and
-/// GitHub link, plus credits for any
+/// GitHub link, the update check and its automatic toggle, plus credits for any
 /// bundled open-source packages (that section is hidden while there are none).
 private struct AboutPane: View {
     @Environment(\.openWindow) private var openWindow
+    @Environment(SettingsStore.self) private var settingsStore
+    @Environment(UpdateService.self) private var updateService
     @State private var licenseShown: OpenSourcePackage?
 
     var body: some View {
+        @Bindable var settings = settingsStore
+
         Form {
             Section {
                 VStack(spacing: 6) {
@@ -336,6 +340,22 @@ private struct AboutPane: View {
                 .padding(.vertical, 8)
             }
 
+            Section("Updates") {
+                LabeledContent {
+                    Button("Check for Updates") {
+                        Task { await checkForUpdates() }
+                    }
+                    .disabled(updateService.checkStatus == .checking)
+                } label: {
+                    Text(updateStatusLine)
+                    if case .available = updateService.checkStatus {
+                        Button("Show Update") { openWindow.openUpdate() }
+                            .buttonStyle(.link)
+                    }
+                }
+                Toggle("Check for updates automatically", isOn: $settings.checkForUpdatesAutomatically)
+            }
+
             if !OpenSourcePackage.all.isEmpty {
                 Section("Open Source") {
                     ForEach(OpenSourcePackage.all) { package in
@@ -353,6 +373,26 @@ private struct AboutPane: View {
         .navigationTitle("About")
         .sheet(item: $licenseShown) { package in
             LicenseSheet(package: package)
+        }
+    }
+
+    /// The status line next to Check for Updates: the last result in this session, or when
+    /// Baplet last checked if nothing has been checked since launch.
+    private var updateStatusLine: String {
+        if let message = updateService.checkStatus.message {
+            return message
+        }
+        guard let lastCheck = settingsStore.lastUpdateCheck else {
+            return "Not checked yet"
+        }
+        return "Last checked \(lastCheck.formatted(.relative(presentation: .named)))"
+    }
+
+    /// Runs a manual update check and opens the update dialog when it finds a new version,
+    /// so the user can act on it straight away.
+    private func checkForUpdates() async {
+        if await updateService.checkNow(settings: settingsStore) {
+            openWindow.openUpdate()
         }
     }
 

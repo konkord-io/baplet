@@ -62,7 +62,7 @@ struct AlertPopupView: View {
             }
         }
         .padding(24)
-        .frame(width: 320)
+        .frame(width: 380)
     }
 
     /// Open button: with a meeting link, a click joins the meeting and the dropdown offers

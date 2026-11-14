@@ -158,7 +158,7 @@ final class TodayListModel {
     /// Starts with the meeting happening now, or the next one; all-day events are skipped.
     /// When every meeting has ended, the last one is selected. `now` defaults to the current
     /// time; tests pass a fixed one.
-    init(events: [EKEvent], now: Date = Date()) {
+    init(events: [EKEvent], now: Date = AppClock.now()) {
         self.events = events
         let timed = events.indices.filter { !events[$0].isAllDay }
         self.selectedIndex = timed.first { events[$0].endDate > now } ?? timed.last ?? events.indices.first
@@ -224,7 +224,7 @@ private struct TodayView: View {
                 Text("Today")
                     .font(.title2)
                     .fontWeight(.bold)
-                Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+                Text(AppClock.now().formatted(.dateTime.weekday(.wide).day().month(.wide)))
                     .foregroundStyle(.secondary)
                 Spacer()
                 Image("baplet")
@@ -266,7 +266,7 @@ private struct TodayView: View {
                                 if hovering { model.pointerEntered(row: index) }
                             }
                         )
-                        .opacity(event.endDate < .now ? CalendarEventRow.fadedOpacity : 1)
+                        .opacity(event.endDate < AppClock.now() ? CalendarEventRow.fadedOpacity : 1)
                         .id(index)
                     }
                 }

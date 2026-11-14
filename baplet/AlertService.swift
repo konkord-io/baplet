@@ -172,7 +172,7 @@ enum AlertService {
     /// centred on screen.
     private static func makePopupPanel(props: AlertProps) -> AlertPanel {
         let panel = AlertPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 300),
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: 300),
             styleMask: [.titled, .closable, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -310,7 +310,7 @@ extension AlertService {
     /// link, so the user can preview it from Settings or the welcome guide. Its own actions
     /// do nothing except joining the sample meeting; a real alert it replaces is snoozed.
     static func showTestAlert(settings settingsStore: SettingsStore) {
-        let now = Date()
+        let now = AppClock.now()
         let mockEnd = now.addingTimeInterval(30 * 60)
 
         if settingsStore.soundEnabled {

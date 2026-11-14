@@ -15,6 +15,7 @@ struct MenuBarContentView: View {
     @Environment(CalendarService.self) private var calendarService
     @Environment(SettingsStore.self) private var settingsStore
     @Environment(AlarmManager.self) private var alarmManager
+    @Environment(UpdateService.self) private var updateService
     @Environment(\.openWindow) private var openWindow
 
     /// Bumped on every refresh click; the refresh icon spins one turn each time it changes,
@@ -26,8 +27,33 @@ struct MenuBarContentView: View {
             header
             Divider()
             content
+            if let update = updateService.availableUpdate {
+                Divider()
+                updateRow(version: update.version.description)
+            }
         }
         .frame(width: 360)
+    }
+
+    /// Row at the bottom of the menu announcing a newer release; opens the update dialog.
+    private func updateRow(version: String) -> some View {
+        Button {
+            openWindow.openUpdate()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .foregroundStyle(.tint)
+                Text("Update available: \(version)")
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .contentShape(Rectangle())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
     }
 
     /// Header bar with the app name and the refresh, Today, pause/resume, settings and quit
@@ -168,9 +194,9 @@ struct MenuBarContentView: View {
     /// Returns a human-readable label for a given day: "Today", "Tomorrow", or a formatted date.
     private func dayLabel(for date: Date) -> String {
         let calendar = Calendar.current
-        if calendar.isDateInToday(date) {
+        if calendar.isDate(date, inSameDayAs: AppClock.now()) {
             return "Today"
-        } else if calendar.isDateInTomorrow(date) {
+        } else if calendar.date(byAdding: .day, value: 1, to: AppClock.now()).map { calendar.isDate(date, inSameDayAs: $0) } == true {
             return "Tomorrow"
         } else {
             return date.formatted(date: .abbreviated, time: .omitted)
