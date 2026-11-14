@@ -17,6 +17,7 @@ struct MenuBarLabel: View {
     @Environment(CalendarService.self) private var calendarService
     @Environment(SettingsStore.self) private var settingsStore
     @Environment(AlarmManager.self) private var alarmManager
+    @Environment(UpdateService.self) private var updateService
     @Environment(\.openWindow) private var openWindow
 
     /// Set once the global Today shortcut has its handler, so a repeated `.task` run (when
@@ -52,9 +53,12 @@ struct MenuBarLabel: View {
     /// the menu ever being opened.
     /// When access is granted but no calendars are selected, it opens the welcome guide on a
     /// fresh install, or Settings if the guide was already finished.
+    /// Finally, also when calendar access is missing, it starts the automatic daily update
+    /// check (`UpdateService.startAutomaticChecks`).
     /// Does nothing when the app only hosts unit tests (`AppEnvironment.isRunningTests`).
     private func startUp() async {
         guard !AppEnvironment.isRunningTests else { return }
+        defer { updateService.startAutomaticChecks(settings: settingsStore) }
         if !Self.registeredTodayShortcut {
             Self.registeredTodayShortcut = true
             KeyboardShortcuts.onKeyUp(for: .showToday) { [calendarService, settingsStore] in
@@ -100,6 +104,7 @@ enum AppEnvironment {
 enum WindowID {
     static let settings = "settings"
     static let welcome = "welcome"
+    static let update = "update"
 }
 
 extension OpenWindowAction {
@@ -115,6 +120,11 @@ extension OpenWindowAction {
     /// Opens the welcome guide window and brings it to the front.
     func openWelcome() {
         openInFront(id: WindowID.welcome)
+    }
+
+    /// Opens the update dialog and brings it to the front.
+    func openUpdate() {
+        openInFront(id: WindowID.update)
     }
 
     /// Opens the window scene with the given id and brings it to the front.
