@@ -1,4 +1,4 @@
-# CalKitty
+# Baplet
 
 A macOS menu bar app that keeps you on top of your calendar events with customizable alarm alerts.
 
@@ -28,8 +28,8 @@ A macOS menu bar app that keeps you on top of your calendar events with customiz
 
 ## Building
 
-1. Open `calkitty.xcodeproj` in Xcode
-2. Select the `calkitty` scheme
+1. Open `baplet.xcodeproj` in Xcode
+2. Select the `baplet` scheme
 3. Build and run (Cmd+R)
 
 On first launch the app will request calendar access. Grant full access for all features to work.
@@ -40,26 +40,26 @@ You can share the built app for free without paying the $99/yr Apple Developer P
 
 ### Build a shareable `.app`
 
-1. In Xcode: **Product → Archive** → in the Organizer, **Distribute App → Custom → Copy App** → pick a folder. You get a `calkitty.app` signed with your free "Apple Development" cert.
+1. In Xcode: **Product → Archive** → in the Organizer, **Distribute App → Custom → Copy App** → pick a folder. You get a `Baplet.app` signed with your free "Apple Development" cert.
 2. Strip quarantine attributes and zip it:
    ```sh
-   xattr -cr calkitty.app
-   ditto -c -k --keepParent calkitty.app calkitty.zip
+   xattr -cr Baplet.app
+   ditto -c -k --keepParent Baplet.app Baplet.zip
    ```
-3. Send `calkitty.zip` to your friends (email, Dropbox, GitHub release, etc.).
+3. Send `Baplet.zip` to your friends (email, Dropbox, GitHub release, etc.).
 
 ### What your friends do
 
-1. Unzip and drag `calkitty.app` to `/Applications`.
+1. Unzip and drag `Baplet.app` to `/Applications`.
 2. **First launch:** double-click → macOS will say "cannot be opened because the developer cannot be verified."
-3. Open **System Settings → Privacy & Security**, scroll to the bottom, click **"Open Anyway"** next to the calkitty message. Confirm.
+3. Open **System Settings → Privacy & Security**, scroll to the bottom, click **"Open Anyway"** next to the Baplet message. Confirm.
 
 After that one-time approval the app launches normally forever.
 
 If that's too much friction, your friend can run this single terminal command instead, and the app opens with no warning at all:
 
 ```sh
-xattr -dr com.apple.quarantine /Applications/calkitty.app
+xattr -dr com.apple.quarantine /Applications/Baplet.app
 ```
 
 ### Trade-offs vs the paid path

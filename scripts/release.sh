@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# release.sh — Archive, export, create DMG, notarize, and staple CalKitty for
+# release.sh — Archive, export, create DMG, notarize, and staple Baplet for
 # distribution outside the Mac App Store.
 set -euo pipefail
 
-APP_NAME="calkitty"
-DISPLAY_NAME="CalKitty"
-SCHEME="calkitty"
-PROJECT="calkitty.xcodeproj"
+APP_NAME="Baplet"
+DISPLAY_NAME="Baplet"
+SCHEME="baplet"
+PROJECT="baplet.xcodeproj"
 EXPORT_PLIST="ExportOptions.plist"
 BUILD_DIR="./build"
 ARCHIVE_PATH="${BUILD_DIR}/${APP_NAME}.xcarchive"
 EXPORT_PATH="${BUILD_DIR}/export"
 DMG_PATH="${BUILD_DIR}/${DISPLAY_NAME}.dmg"
-NOTARY_PROFILE="calkitty-notary"
+NOTARY_PROFILE="baplet-notary"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 

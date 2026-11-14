@@ -1,6 +1,6 @@
 //
-//  alarminaApp.swift
-//  alarmina
+//  BapletApp.swift
+//  baplet
 //
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct alarminaApp: App {
+struct BapletApp: App {
     @State private var calendarService = CalendarService()
     @State private var settingsStore = SettingsStore()
     @State private var alarmManager = AlarmManager()
@@ -21,7 +21,7 @@ struct alarminaApp: App {
                 .environment(alarmManager)
         } label: {
             Label {
-                Text("Alarmina")
+                Text("Baplet")
             } icon: {
                 if let label = alarmManager.menuBarStatus.label {
                     HStack(spacing: 2) {

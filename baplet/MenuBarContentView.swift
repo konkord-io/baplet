@@ -1,6 +1,6 @@
 //
 //  MenuBarContentView.swift
-//  calkitty
+//  baplet
 //
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //
@@ -51,7 +51,7 @@ struct MenuBarContentView: View {
     /// Header bar displaying the app name with refresh, settings, and quit buttons.
     private var header: some View {
         HStack(spacing: 12) {
-            Text("CalKitty")
+            Text("Baplet")
                 .font(.headline)
             Spacer()
             Button {
@@ -123,7 +123,7 @@ struct MenuBarContentView: View {
             statusView(
                 icon: "calendar.badge.minus",
                 title: "Write-Only Access",
-                message: "CalKitty needs full calendar access. Open System Settings to update permissions.",
+                message: "Baplet needs full calendar access. Open System Settings to update permissions.",
                 action: ("Open System Settings", openCalendarSettings)
             )
         @unknown default:
