@@ -2,8 +2,20 @@ name: CI
 
 on:
   pull_request:
+    paths:
+      - 'baplet/**'
+      - 'bapletTests/**'
+      - 'baplet.xcodeproj/**'
+      - 'Makefile'
+      - '.github/workflows/ci.yml'
   push:
     branches: [main]
+    paths:
+      - 'baplet/**'
+      - 'bapletTests/**'
+      - 'baplet.xcodeproj/**'
+      - 'Makefile'
+      - '.github/workflows/ci.yml'
 
 concurrency:
   group: ci-${{ github.ref }}
