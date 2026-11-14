@@ -7,7 +7,8 @@ import AppKit
 import EventKit
 import SwiftUI
 
-/// The always-visible menu bar item: an icon plus an optional countdown.
+/// The always-visible menu bar item: the Baplet "b" template icon (faded while alarms are
+/// paused) plus an optional countdown.
 /// SwiftUI renders it as soon as the app launches (unlike the menu window, which is built
 /// lazily on first click), so it also owns app startup.
 struct MenuBarLabel: View {
@@ -20,16 +21,13 @@ struct MenuBarLabel: View {
         Label {
             Text("Baplet")
         } icon: {
-            if let label = alarmManager.menuBarStatus.label {
-                HStack(spacing: 2) {
-                    Image(systemName: alarmManager.menuBarStatus.icon)
+            HStack(spacing: 2) {
+                Image("BapletToolbar")
+                    .opacity(alarmManager.menuBarStatus.isDimmed ? 0.4 : 1)
+                if let label = alarmManager.menuBarStatus.label {
                     Text(label)
                         .monospacedDigit()
                 }
-                .frame(minWidth: 40, alignment: .leading)
-            } else {
-                Image(systemName: alarmManager.menuBarStatus.icon)
-                    .frame(minWidth: 20)
             }
         }
         .task {
