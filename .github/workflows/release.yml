@@ -39,7 +39,8 @@ jobs:
 
           Repeat this for each new version you download.
           NOTES
-          gh release create "$GITHUB_REF_NAME" "build/Baplet-${version}.dmg" \
+          cp "build/Baplet-${version}.dmg" build/Baplet.dmg
+          gh release create "$GITHUB_REF_NAME" "build/Baplet-${version}.dmg" build/Baplet.dmg \
             --draft \
             --title "Baplet ${version}" \
             --notes-file notes.md

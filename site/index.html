@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Baplet — meeting alarms for your Mac</title>
+  <meta name="description" content="Baplet is a free macOS menu bar app that taps you on the shoulder before every meeting, so you never miss one again.">
+  <meta property="og:title" content="Baplet — meeting alarms for your Mac">
+  <meta property="og:description" content="For people who keep getting distracted. Baplet taps you on the shoulder before every meeting.">
+  <meta property="og:image" content="https://baplet.konkord.io/assets/goldfish.webp">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><img src="assets/logo.svg" alt="" width="28" height="28"> Baplet</a>
+    <a class="topbar-link" href="https://github.com/konkord-io/baplet">GitHub</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <img class="hero-image" src="assets/goldfish.webp" alt="Two goldfish in Baplet T-shirts swimming in a bowl above calendar pages" width="360" height="360">
+      <h1>Baplet</h1>
+      <p class="tagline">For people who keep getting distracted.</p>
+      <p class="lede">Baplet lives in your Mac's menu bar and taps you on the shoulder before every meeting, so you never miss one again.</p>
+      <div class="cta">
+        <a class="button" href="https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg">Download for macOS</a>
+        <span class="cta-note">Free · macOS 26.3 or later · <a href="https://github.com/konkord-io/baplet/releases">all versions</a></span>
+      </div>
+      <p class="notice"><strong>Heads-up:</strong> Baplet isn't signed by Apple yet, so macOS warns you the first time you open it. It takes one extra step — <a href="#install">see how to install</a>.</p>
+    </section>
+
+    <section class="features" aria-label="Features">
+      <article>
+        <h2>Alerts you can't miss</h2>
+        <p>A popup or a full-screen alert a few minutes before each meeting, in one of four styles. Snooze, dismiss or join with a single key.</p>
+      </article>
+      <article>
+        <h2>Today at a keystroke</h2>
+        <p>Press your own global shortcut from any app to see the whole day. Pick a meeting with the arrow keys and press Return to join.</p>
+      </article>
+      <article>
+        <h2>Join in the right browser</h2>
+        <p>Google Meet, Zoom, Teams, Webex and more open in the browser — and Chrome, Edge, Brave, Vivaldi or Firefox profile — you choose.</p>
+      </article>
+      <article>
+        <h2>Quietly in your menu bar</h2>
+        <p>A small countdown shows when the next meeting starts. Works with every calendar in the macOS Calendar app: iCloud, Google, Exchange and others.</p>
+      </article>
+    </section>
+
+    <section class="install" id="install">
+      <h2>Installing</h2>
+      <div class="why">
+        <h3>Why does macOS warn about Baplet?</h3>
+        <p>Apple only lets apps open without a warning when they're signed with a paid Apple Developer ID and checked ("notarized") by Apple. Baplet is an early, free project and isn't signed that way yet, so macOS can't confirm who made it and blocks it until you allow it. Nothing is wrong with the download: Baplet is open source, so you can <a href="https://github.com/konkord-io/baplet">read every line of its code</a>. Signed builds will come later, and then this extra step goes away.</p>
+      </div>
+      <ol>
+        <li>Open the downloaded <code>Baplet.dmg</code> and drag <strong>Baplet</strong> to <strong>Applications</strong>.</li>
+        <li>Start Baplet. macOS says it can't verify the developer. Click <strong>Done</strong> (not Move to Bin).</li>
+        <li>Open <strong>System Settings → Privacy &amp; Security</strong>, scroll down to the message about Baplet, click <strong>Open Anyway</strong> and confirm with your password or Touch ID.</li>
+        <li>Allow calendar access, and the welcome guide takes it from there.</li>
+      </ol>
+      <p class="install-alt">Prefer Terminal? <code>xattr -dr com.apple.quarantine /Applications/Baplet.app</code> does the same as steps 2–3.</p>
+      <p class="install-alt">Updating? Each new version you download needs steps 2–3 again, and macOS asks for calendar access again. Right-click → Open no longer skips the warning on recent macOS versions.</p>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://github.com/konkord-io/baplet">Source on GitHub</a>
+    <span>·</span>
+    <a href="https://github.com/konkord-io/baplet/blob/main/LICENSE">MIT License</a>
+    <span>·</span>
+    <span>© 2026 Jakob Vad Nielsen</span>
+  </footer>
+</body>
+</html>
