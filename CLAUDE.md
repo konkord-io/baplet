@@ -22,11 +22,12 @@ CI (`.github/workflows/ci.yml`) runs `make test ADHOC=1 VERBOSE=1` on PRs and pu
 
 ## Architecture
 
-Three `@Observable` singletons are created in `BapletApp.swift` and injected with `.environment(...)` into both scenes (the menu bar window and the `settings` window):
+Four `@Observable` singletons are created in `BapletApp.swift` and injected with `.environment(...)` into the scenes (the menu bar window, `settings`, `welcome` and `update`):
 
 - `CalendarService`: EventKit access, calendar list, event fetching.
 - `SettingsStore`: user preferences persisted to `UserDefaults`; owns legacy-key migrations (keep them when renaming keys).
 - `AlarmManager`: 30 s `Timer` loop that decides when to fire, tracks dismiss/snooze, and computes `MenuBarStatus` (menu bar icon + countdown). One alert at a time: other due events wait, and the next one is shown as soon as the open alert is dismissed, snoozed or opened.
+- `UpdateService` (`UpdateService.swift`): checks `releases/latest` on GitHub (unauthenticated) and compares its tag with `CFBundleShortVersionString` via `AppVersion`. Manual check in Settings → About; automatic check started from `MenuBarLabel.startUp`, at most once per 24 h (`SettingsStore.lastUpdateCheck`, toggle `checkForUpdatesAutomatically`), skipped in Debug builds. A known update shows a row at the bottom of the menu that opens the `update` window (`UpdateDialogView`). Install & Restart (`UpdateInstaller.swift`) downloads the fixed-name `Baplet.dmg` asset, checks its SHA-256 against the asset's GitHub `digest`, mounts it hidden and read-only, checks bundle id and version, stages the app next to the running one, then quits while a detached `/bin/sh` helper swaps the bundles and relaunches. `InstallBlocker` (pure, tested) refuses in-place installs for Debug builds, translocated apps, apps under `/Volumes` and unwritable folders; those, and releases without a digest, get Download Manually only. Release builds must therefore keep uploading `Baplet.dmg` with the app at the tag's version.
 
 Per-event alarm state (disabled, snoozed, alerting) is keyed per occurrence by `EKEvent.alarmKey` (`eventIdentifier|start`, in `EKEvent+Baplet.swift`), because occurrences of a recurring event share `eventIdentifier`. Use `alarmKey`, `displayTitle` and `EventTimeFormat` rather than reading those fields directly.
 

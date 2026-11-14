@@ -37,6 +37,8 @@ struct SettingsStoreTests {
             #expect(store.meetingBrowserProfileID == nil)
             #expect(!store.onboardingCompleted)
             #expect(store.todayReturnAction == .joinMeeting)
+            #expect(store.checkForUpdatesAutomatically)
+            #expect(store.lastUpdateCheck == nil)
         }
     }
 
