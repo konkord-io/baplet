@@ -166,7 +166,8 @@ final class AlarmManager {
                 meetingLink: meetingLink,
                 onDismiss: { [weak self] in self?.dismiss(eventID: eventID) },
                 onSnooze: { [weak self] minutes in self?.snooze(eventID: eventID, minutes: minutes) },
-                onOpenInCalendar: openInCalendar
+                onOpenInCalendar: openInCalendar,
+                openMeetingURL: { url in BrowserService.openMeeting(url, settings: settingsStore) }
             )
 
         case .fullScreenGlassmorphic, .fullScreenBoldMinimal, .fullScreenWarmPlayful:
@@ -179,7 +180,8 @@ final class AlarmManager {
                 meetingLink: meetingLink,
                 onDismiss: { [weak self] in self?.dismiss(eventID: eventID) },
                 onSnooze: { [weak self] minutes in self?.snooze(eventID: eventID, minutes: minutes) },
-                onOpenInCalendar: openInCalendar
+                onOpenInCalendar: openInCalendar,
+                openMeetingURL: { url in BrowserService.openMeeting(url, settings: settingsStore) }
             )
         }
     }

@@ -35,5 +35,15 @@ struct BapletApp: App {
         }
         .windowResizability(.contentSize)
         .windowLevel(.floating)
+
+        Window("Welcome to Baplet", id: "welcome") {
+            OnboardingView()
+                .environment(calendarService)
+                .environment(settingsStore)
+                .environment(alarmManager)
+        }
+        .windowResizability(.contentSize)
+        .windowLevel(.floating)
+        .defaultLaunchBehavior(.suppressed)
     }
 }

@@ -120,7 +120,8 @@ enum AlertService {
         meetingLink: MeetingLink? = nil,
         onDismiss: @escaping () -> Void,
         onSnooze: @escaping (Int) -> Void,
-        onOpenInCalendar: @escaping () -> Void
+        onOpenInCalendar: @escaping () -> Void,
+        openMeetingURL: @escaping (URL) -> Void
     ) {
         closeActivePanel()
 
@@ -140,7 +141,8 @@ enum AlertService {
             meetingLink: meetingLink,
             onDismiss: onDismiss,
             onSnooze: onSnooze,
-            onOpenInCalendar: onOpenInCalendar
+            onOpenInCalendar: onOpenInCalendar,
+            openMeetingURL: openMeetingURL
         )
         let rootView = AlertPopupView(
             title: title,
@@ -179,7 +181,8 @@ enum AlertService {
         meetingLink: MeetingLink? = nil,
         onDismiss: @escaping () -> Void,
         onSnooze: @escaping (Int) -> Void,
-        onOpenInCalendar: @escaping () -> Void
+        onOpenInCalendar: @escaping () -> Void,
+        openMeetingURL: @escaping (URL) -> Void
     ) {
         closeActivePanel()
 
@@ -201,7 +204,8 @@ enum AlertService {
             meetingLink: meetingLink,
             onDismiss: onDismiss,
             onSnooze: onSnooze,
-            onOpenInCalendar: onOpenInCalendar
+            onOpenInCalendar: onOpenInCalendar,
+            openMeetingURL: openMeetingURL
         )
         let props = FullScreenAlertProps(
             title: title,
@@ -274,19 +278,20 @@ enum AlertService {
         let openInCalendar: () -> Void
         let openDefault: () -> Void
 
-        /// Builds the wrapped actions from the caller's dismiss/snooze/Calendar callbacks
-        /// and the event's meeting link, if any.
+        /// Builds the wrapped actions from the caller's dismiss/snooze/Calendar callbacks,
+        /// the event's meeting link (if any) and how to open it (the browser chosen in Settings).
         init(
             meetingLink: MeetingLink?,
             onDismiss: @escaping () -> Void,
             onSnooze: @escaping (Int) -> Void,
-            onOpenInCalendar: @escaping () -> Void
+            onOpenInCalendar: @escaping () -> Void,
+            openMeetingURL: @escaping (URL) -> Void
         ) {
             let openMeeting = {
                 closeActivePanel()
                 onDismiss()
                 if let meetingLink {
-                    NSWorkspace.shared.open(meetingLink.url)
+                    openMeetingURL(meetingLink.url)
                 }
             }
             let openInCalendar = {
@@ -314,4 +319,58 @@ enum AlertService {
 /// activating Baplet or pulling the user out of their current app.
 private final class AlertPanel: NSPanel {
     override var canBecomeKey: Bool { true }
+}
+
+extension AlertService {
+    /// Fires a sample alert in the currently selected style, with a mock event and Google Meet
+    /// link, so the user can preview it from Settings or the welcome guide.
+    static func showTestAlert(settings settingsStore: SettingsStore) {
+        let mockMeetingLink = AlertService.MeetingLink(
+            serviceName: "Google Meet",
+            icon: "video",
+            url: URL(string: "https://meet.google.com/abc-defg-hij")!
+        )
+
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        let now = Date()
+        let mockEnd = now.addingTimeInterval(30 * 60)
+        let timeString = "Now \(formatter.string(from: now)) \u{00b7} \(formatter.string(from: now)) \u{2013} \(formatter.string(from: mockEnd))"
+
+        if settingsStore.soundEnabled {
+            playAlarmSound()
+        }
+
+        let style = settingsStore.alertStyle
+
+        switch style {
+        case .popupDialog:
+            showPopupAlert(
+                title: "Test Event",
+                time: timeString,
+                location: "Conference Room A",
+                calendarName: "Work",
+                meetingLink: mockMeetingLink,
+                onDismiss: {},
+                onSnooze: { _ in },
+                onOpenInCalendar: {},
+                openMeetingURL: { url in BrowserService.openMeeting(url, settings: settingsStore) }
+            )
+
+        case .fullScreenGlassmorphic, .fullScreenBoldMinimal, .fullScreenWarmPlayful:
+            showFullScreenAlert(
+                style: style,
+                title: "Test Event",
+                time: timeString,
+                location: "Conference Room A",
+                calendarName: "Work",
+                meetingLink: mockMeetingLink,
+                onDismiss: {},
+                onSnooze: { _ in },
+                onOpenInCalendar: {},
+                openMeetingURL: { url in BrowserService.openMeeting(url, settings: settingsStore) }
+            )
+        }
+    }
 }

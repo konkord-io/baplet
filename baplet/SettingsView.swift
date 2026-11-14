@@ -13,12 +13,16 @@ struct SettingsView: View {
     private enum SettingsPane: String, Hashable, CaseIterable {
         case calendars
         case alerts
+        case meetings
+        case about
 
         /// Display label for the sidebar row.
         var label: String {
             switch self {
             case .calendars: "Calendars"
             case .alerts: "Alerts"
+            case .meetings: "Meetings"
+            case .about: "About"
             }
         }
 
@@ -27,6 +31,8 @@ struct SettingsView: View {
             switch self {
             case .calendars: "calendar"
             case .alerts: "bell"
+            case .meetings: "video"
+            case .about: "info.circle"
             }
         }
     }
@@ -46,6 +52,10 @@ struct SettingsView: View {
                 CalendarsPane()
             case .alerts:
                 AlertsPane()
+            case .meetings:
+                MeetingsPane()
+            case .about:
+                AboutPane()
             }
         }
         .frame(width: 580, height: 420)
@@ -70,6 +80,10 @@ private struct CalendarsPane: View {
             }
         } else {
             Form {
+                Section {
+                    SettingsHelpText("Choose which calendars Baplet watches. Events from the selected calendars appear in the menu and can trigger alerts. The list comes from the accounts in the macOS Calendar app (iCloud, Google, Exchange and others). To add one, go to System Settings → [Internet Accounts](x-apple.systempreferences:com.apple.Internet-Accounts-Settings.extension).")
+                }
+
                 ForEach(calendarService.sources, id: \.sourceIdentifier) { source in
                     let sourceCalendars = calendarService.calendars(for: source)
                     if !sourceCalendars.isEmpty {
@@ -130,92 +144,213 @@ private struct AlertsPane: View {
         @Bindable var settings = settingsStore
 
         Form {
-            Section("Alert Style") {
+            Section {
+                SettingsHelpText("Choose how Baplet alerts you before an event starts, and try it out with Test Alert. The last setting controls how many days of events the menu shows.")
+            }
+
+            Section {
                 Picker("Style", selection: $settings.alertStyle) {
                     ForEach(AlertStyle.allCases) { style in
                         Text(style.label).tag(style)
                     }
                 }
-            }
-
-            Section("Sound") {
                 Toggle("Play sound on alert", isOn: $settings.soundEnabled)
-            }
-
-            Section("Timing") {
-                Stepper(
-                    "Alert \(settingsStore.minutesBefore) minutes before event",
-                    value: $settings.minutesBefore,
-                    in: 1...60
-                )
-            }
-
-            Section("Display") {
-                Stepper(
-                    "Show \(settingsStore.daysToShow) \(settingsStore.daysToShow == 1 ? "day" : "days") of events",
-                    value: $settings.daysToShow,
-                    in: 1...14
-                )
-            }
-
-            Section("Preview") {
+                LabeledContent("Alert before event") {
+                    ValueStepper(value: $settings.minutesBefore, range: 1...60, unit: "min", pluralUnit: "min")
+                }
                 LabeledContent("Test the selected alert style") {
                     Button("Test Alert") {
-                        testAlert()
+                        AlertService.showTestAlert(settings: settingsStore)
                     }
+                }
+            }
+
+            Section {
+                LabeledContent("Days of events shown") {
+                    ValueStepper(value: $settings.daysToShow, range: 1...14, unit: "day", pluralUnit: "days")
                 }
             }
         }
         .formStyle(.grouped)
         .navigationTitle("Alerts")
     }
+}
 
-    /// Fires a test alert of the currently selected style to preview its appearance.
-    private func testAlert() {
-        let mockMeetingLink = AlertService.MeetingLink(
-            serviceName: "Google Meet",
-            icon: "video",
-            url: URL(string: "https://meet.google.com/abc-defg-hij")!
-        )
+/// Pane for choosing which browser, and which of its profiles, opens meeting links.
+/// The profile picker appears only for browsers whose profiles Baplet can select
+/// (Chromium family and Firefox).
+private struct MeetingsPane: View {
+    @Environment(SettingsStore.self) private var settingsStore
+    @State private var browsers: [Browser] = []
+    @State private var profiles: [BrowserProfile] = []
 
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        formatter.dateStyle = .none
-        let now = Date()
-        let mockEnd = now.addingTimeInterval(30 * 60)
-        let timeString = "Now \(formatter.string(from: now)) \u{00b7} \(formatter.string(from: now)) \u{2013} \(formatter.string(from: mockEnd))"
+    var body: some View {
+        @Bindable var settings = settingsStore
 
-        if settingsStore.soundEnabled {
-            AlertService.playAlarmSound()
+        Form {
+            Section {
+                SettingsHelpText("Choose the browser that opens meeting links when you join from an alert, the O/Return shortcut or the event list. For Chrome, Edge, Brave, Vivaldi and Firefox you can also pick which profile to use.")
+            }
+
+            Section {
+                Picker("Browser", selection: $settings.meetingBrowserID) {
+                    Text("System default").tag(String?.none)
+                    Divider()
+                    ForEach(browsers) { browser in
+                        Label {
+                            Text(browser.name)
+                        } icon: {
+                            Image(nsImage: Self.menuIcon(for: browser))
+                        }
+                        .tag(Optional(browser.bundleID))
+                    }
+                }
+
+                if selectedBrowser?.profileFamily != nil {
+                    Picker("Profile", selection: $settings.meetingBrowserProfileID) {
+                        Text("Browser default").tag(String?.none)
+                        if !profiles.isEmpty {
+                            Divider()
+                        }
+                        ForEach(profiles) { profile in
+                            Text(profile.name).tag(Optional(profile.id))
+                        }
+                    }
+                    .disabled(profiles.isEmpty)
+                }
+            }
         }
+        .formStyle(.grouped)
+        .navigationTitle("Meetings")
+        .onAppear {
+            browsers = BrowserService.installedBrowsers()
+            loadProfiles()
+        }
+        .onChange(of: settingsStore.meetingBrowserID) {
+            settingsStore.meetingBrowserProfileID = nil
+            loadProfiles()
+        }
+    }
 
-        let style = settingsStore.alertStyle
+    /// The installed browser matching the saved choice, or nil for the system default.
+    private var selectedBrowser: Browser? {
+        browsers.first { $0.bundleID == settingsStore.meetingBrowserID }
+    }
 
-        switch style {
-        case .popupDialog:
-            AlertService.showPopupAlert(
-                title: "Test Event",
-                time: timeString,
-                location: "Conference Room A",
-                calendarName: "Work",
-                meetingLink: mockMeetingLink,
-                onDismiss: {},
-                onSnooze: { _ in },
-                onOpenInCalendar: {}
-            )
+    /// Re-reads the profile list for the selected browser (empty when it has none).
+    private func loadProfiles() {
+        profiles = selectedBrowser.map(BrowserService.profiles(for:)) ?? []
+    }
 
-        case .fullScreenGlassmorphic, .fullScreenBoldMinimal, .fullScreenWarmPlayful:
-            AlertService.showFullScreenAlert(
-                style: style,
-                title: "Test Event",
-                time: timeString,
-                location: "Conference Room A",
-                calendarName: "Work",
-                meetingLink: mockMeetingLink,
-                onDismiss: {},
-                onSnooze: { _ in },
-                onOpenInCalendar: {}
-            )
+    /// The browser's app icon scaled to menu size, so the picker rows stay compact.
+    private static func menuIcon(for browser: Browser) -> NSImage {
+        let icon = NSWorkspace.shared.icon(forFile: browser.appURL.path)
+        icon.size = NSSize(width: 16, height: 16)
+        return icon
+    }
+}
+
+/// Pane with the app logo, name, version, creator and copyright, plus credits for any
+/// bundled open-source packages (that section is hidden while there are none).
+private struct AboutPane: View {
+    @Environment(\.openWindow) private var openWindow
+    @State private var licenseShown: OpenSourcePackage?
+
+    var body: some View {
+        Form {
+            Section {
+                VStack(spacing: 6) {
+                    Image("baplet")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 96, height: 96)
+                        .padding(.bottom, 4)
+                    Text("Baplet")
+                        .font(.title)
+                        .fontWeight(.semibold)
+                    Text("Version \(Self.infoValue("CFBundleShortVersionString")) (\(Self.infoValue("CFBundleVersion")))")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Text("Created by Jakob Vad Nielsen")
+                        .padding(.top, 8)
+                    Text(Self.infoValue("NSHumanReadableCopyright"))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Button("Show Welcome Guide") {
+                        openWindow.openWelcome()
+                    }
+                    .padding(.top, 12)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+            }
+
+            if !OpenSourcePackage.all.isEmpty {
+                Section("Open Source") {
+                    ForEach(OpenSourcePackage.all) { package in
+                        LabeledContent {
+                            Button("License") { licenseShown = package }
+                        } label: {
+                            Link(package.name, destination: package.url)
+                            Text(package.license)
+                        }
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .navigationTitle("About")
+        .sheet(item: $licenseShown) { package in
+            LicenseSheet(package: package)
+        }
+    }
+
+    /// Reads a string from the app's Info.plist, so version and copyright have one source.
+    private static func infoValue(_ key: String) -> String {
+        Bundle.main.object(forInfoDictionaryKey: key) as? String ?? ""
+    }
+}
+
+/// Scrollable full license text for one open-source package, closed with Done or Escape.
+private struct LicenseSheet: View {
+    let package: OpenSourcePackage
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("\(package.name) — \(package.license)")
+                .font(.headline)
+            ScrollView {
+                Text(package.licenseText)
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            HStack {
+                Spacer()
+                Button("Done") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
+        .padding(20)
+        .frame(width: 480, height: 360)
+    }
+}
+
+/// A settings value shown as "5 min" or "3 days" right next to its stepper arrows, so the row
+/// label can stay a plain description while the number sits on the right like System Settings.
+private struct ValueStepper: View {
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    let unit: String
+    let pluralUnit: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("\(value) \(value == 1 ? unit : pluralUnit)")
+                .monospacedDigit()
+            Stepper("", value: $value, in: range)
+                .labelsHidden()
         }
     }
 }

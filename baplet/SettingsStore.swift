@@ -83,6 +83,23 @@ final class SettingsStore {
         didSet { defaults.set(Array(disabledEventAlarms), forKey: Keys.disabledEventAlarms) }
     }
 
+    /// Bundle identifier of the browser that opens meeting links; nil means the system default.
+    var meetingBrowserID: String? {
+        didSet { defaults.set(meetingBrowserID, forKey: Keys.meetingBrowserID) }
+    }
+
+    /// Profile to open meeting links in, as `BrowserProfile.id` for the chosen browser;
+    /// nil means the browser's own default profile.
+    var meetingBrowserProfileID: String? {
+        didSet { defaults.set(meetingBrowserProfileID, forKey: Keys.meetingBrowserProfileID) }
+    }
+
+    /// Whether the user has finished the welcome guide; until then a launch with no
+    /// calendars selected opens the guide instead of Settings.
+    var onboardingCompleted: Bool {
+        didSet { defaults.set(onboardingCompleted, forKey: Keys.onboardingCompleted) }
+    }
+
     private let defaults = UserDefaults.standard
 
     private enum Keys {
@@ -95,11 +112,18 @@ final class SettingsStore {
         static let minutesBefore = "minutesBefore"
         static let daysToShow = "daysToShow"
         static let disabledEventAlarms = "disabledEventAlarms"
+        static let meetingBrowserID = "meetingBrowserID"
+        static let meetingBrowserProfileID = "meetingBrowserProfileID"
+        static let onboardingCompleted = "onboardingCompleted"
+        /// Set once settings have been copied out of the old sandbox container.
+        static let migratedFromSandboxContainer = "migratedFromSandboxContainer"
     }
 
     /// Loads all persisted settings from UserDefaults, applying sensible defaults
     /// for values that haven't been set yet.
     init() {
+        Self.migrateFromSandboxContainerIfNeeded(into: defaults)
+
         let storedCalendarIDs = defaults.stringArray(forKey: Keys.enabledCalendarIDs) ?? []
         self.enabledCalendarIDs = Set(storedCalendarIDs)
 
@@ -135,6 +159,26 @@ final class SettingsStore {
 
         let storedDisabledAlarms = defaults.stringArray(forKey: Keys.disabledEventAlarms) ?? []
         self.disabledEventAlarms = Set(storedDisabledAlarms)
+
+        self.meetingBrowserID = defaults.string(forKey: Keys.meetingBrowserID)
+        self.meetingBrowserProfileID = defaults.string(forKey: Keys.meetingBrowserProfileID)
+        self.onboardingCompleted = defaults.bool(forKey: Keys.onboardingCompleted)
+    }
+
+    /// Copies settings saved while Baplet was sandboxed (before profile support needed the
+    /// sandbox off) from the old container into the regular preferences, once. Only keys not
+    /// already present are copied, so nothing set since then is overwritten.
+    private static func migrateFromSandboxContainerIfNeeded(into defaults: UserDefaults) {
+        guard !defaults.bool(forKey: Keys.migratedFromSandboxContainer),
+              let bundleID = Bundle.main.bundleIdentifier else { return }
+        defer { defaults.set(true, forKey: Keys.migratedFromSandboxContainer) }
+
+        let containerPlist = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Containers/\(bundleID)/Data/Library/Preferences/\(bundleID).plist")
+        guard let old = NSDictionary(contentsOf: containerPlist) as? [String: Any] else { return }
+        for (key, value) in old where defaults.object(forKey: key) == nil {
+            defaults.set(value, forKey: key)
+        }
     }
 
     /// Toggles the alarm enabled state for a specific event by its identifier.

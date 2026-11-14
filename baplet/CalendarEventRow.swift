@@ -51,7 +51,7 @@ struct CalendarEventRow: View {
 
             if let meetingLink = AlertService.extractMeetingLink(from: event) {
                 Button {
-                    NSWorkspace.shared.open(meetingLink.url)
+                    BrowserService.openMeeting(meetingLink.url, settings: settingsStore)
                 } label: {
                     Image(systemName: meetingLink.icon)
                         .font(.system(size: 16))
