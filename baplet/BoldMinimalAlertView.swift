@@ -1,6 +1,6 @@
 //
 //  BoldMinimalAlertView.swift
-//  calkitty
+//  baplet
 //
 //  Created by Jakob Vad Nielsen on 20/05/2026.
 //
@@ -17,7 +17,7 @@ struct BoldMinimalAlertView: View {
 
     var body: some View {
         ZStack {
-            Image("calkitty")
+            Image("baplet")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(height: 80)

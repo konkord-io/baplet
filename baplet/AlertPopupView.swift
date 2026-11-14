@@ -1,6 +1,6 @@
 //
 //  AlertPopupView.swift
-//  calkitty
+//  baplet
 //
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //
@@ -26,7 +26,7 @@ struct AlertPopupView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image("calkitty")
+            Image("baplet")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(height: 200)

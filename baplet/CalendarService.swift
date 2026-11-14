@@ -1,6 +1,6 @@
 //
 //  CalendarService.swift
-//  calkitty
+//  baplet
 //
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //

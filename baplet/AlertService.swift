@@ -1,6 +1,6 @@
 //
 //  AlertService.swift
-//  calkitty
+//  baplet
 //
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //
@@ -91,7 +91,7 @@ enum AlertService {
         """
 
         let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("calkitty-event.ics")
+            .appendingPathComponent("baplet-event.ics")
         do {
             try ics.write(to: tempURL, atomically: true, encoding: .utf8)
             NSWorkspace.shared.open(tempURL)
@@ -123,7 +123,7 @@ enum AlertService {
             backing: .buffered,
             defer: false
         )
-        panel.title = "CalKitty"
+        panel.title = "Baplet"
         panel.level = .floating
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false

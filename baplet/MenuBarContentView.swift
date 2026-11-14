@@ -1,6 +1,6 @@
 //
 //  MenuBarContentView.swift
-//  calkitty
+//  baplet
 //
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //
@@ -23,27 +23,6 @@ struct MenuBarContentView: View {
             content
         }
         .frame(width: 360)
-        .task {
-            await initialLoad()
-        }
-    }
-
-    /// Checks authorization on launch and either loads data directly or requests access.
-    private func initialLoad() async {
-        switch calendarService.authorizationStatus {
-        case .fullAccess:
-            calendarService.loadCalendars()
-            calendarService.fetchEvents(enabledCalendarIDs: settingsStore.enabledCalendarIDs, daysToShow: settingsStore.daysToShow)
-            alarmManager.start(calendarService: calendarService, settingsStore: settingsStore)
-        case .notDetermined:
-            await calendarService.requestAccess()
-            if calendarService.authorizationStatus == .fullAccess {
-                calendarService.fetchEvents(enabledCalendarIDs: settingsStore.enabledCalendarIDs, daysToShow: settingsStore.daysToShow)
-                alarmManager.start(calendarService: calendarService, settingsStore: settingsStore)
-            }
-        default:
-            break
-        }
     }
 
     @Environment(\.openWindow) private var openWindow
@@ -51,7 +30,7 @@ struct MenuBarContentView: View {
     /// Header bar displaying the app name with refresh, settings, and quit buttons.
     private var header: some View {
         HStack(spacing: 12) {
-            Text("CalKitty")
+            Text("Baplet")
                 .font(.headline)
             Spacer()
             Button {
@@ -71,13 +50,7 @@ struct MenuBarContentView: View {
             .help(settingsStore.alarmsPaused ? "Resume alarms" : "Pause alarms")
 
             Button {
-                openWindow(id: "settings")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    NSApp.activate(ignoringOtherApps: true)
-                    for window in NSApp.windows where window.identifier?.rawValue == "settings" || window.title == "Settings" {
-                        window.makeKeyAndOrderFront(nil)
-                    }
-                }
+                openWindow.openSettings()
             } label: {
                 Image(systemName: "gear")
             }
@@ -123,7 +96,7 @@ struct MenuBarContentView: View {
             statusView(
                 icon: "calendar.badge.minus",
                 title: "Write-Only Access",
-                message: "CalKitty needs full calendar access. Open System Settings to update permissions.",
+                message: "Baplet needs full calendar access. Open System Settings to update permissions.",
                 action: ("Open System Settings", openCalendarSettings)
             )
         @unknown default:
