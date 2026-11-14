@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  dmg:
+    name: Build DMG and draft release
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run unit tests
+        run: make test ADHOC=1 VERBOSE=1
+
+      - name: Build DMG
+        run: make dmg VERSION="${GITHUB_REF_NAME#v}" BUILD_NUMBER="${{ github.run_number }}" VERBOSE=1
+
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cat > notes.md <<'NOTES'
+          ## Installing
+
+          1. Open the DMG and drag **Baplet** to **Applications**.
+          2. Start Baplet. macOS blocks it the first time, because this build isn't notarized yet.
+          3. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to Baplet, then confirm.
+
+          Or run once in Terminal: `xattr -dr com.apple.quarantine /Applications/Baplet.app`
+
+          Repeat this for each new version you download.
+          NOTES
+          gh release create "$GITHUB_REF_NAME" "build/Baplet-${version}.dmg" \
+            --draft \
+            --title "Baplet ${version}" \
+            --notes-file notes.md

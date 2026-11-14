@@ -11,12 +11,25 @@ SCHEME := baplet
 DERIVED := build/DerivedData
 APP := $(DERIVED)/Build/Products/Debug/Baplet.app
 XCODEBUILD := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED)
+VERSION ?= 0.0.0
+BUILD_NUMBER ?= 1
+DMG := build/Baplet-$(VERSION).dmg
+
+# ADHOC=1 signs without a certificate ("-"), as CI and free release builds need.
+ADHOC_FLAGS := CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=
+ifeq ($(ADHOC),1)
+XCODEBUILD += $(ADHOC_FLAGS)
+endif
 PREFS := $(HOME)/Library/Preferences/io.konkord.baplet.plist
 BUNDLE_ID := io.konkord.baplet
 
 SUMMARY := awk '/error:|warning: .*\/baplet\/|BUILD (SUCCEEDED|FAILED)|TEST (SUCCEEDED|FAILED)|Test run with|✘/'
+# VERBOSE=1 shows the full xcodebuild output (used in CI so failures are diagnosable).
+ifeq ($(VERBOSE),1)
+SUMMARY := cat
+endif
 
-.PHONY: menu run run-logs test build stop clean xcode reset reset-welcome reset-settings reset-calendar reset-all
+.PHONY: menu run run-logs test build dmg stop clean xcode reset reset-welcome reset-settings reset-calendar reset-all
 
 # Prints a numbered menu of the targets whose name matches $(1) (an awk regex), titled $(2),
 # with $(3) as the label of the leave option, then runs the chosen target.
@@ -40,7 +53,7 @@ define confirm
 endef
 
 menu:
-	$(call pick_from,^(run|run-logs|test|build|stop|clean|xcode|reset)$$,Baplet,quit)
+	$(call pick_from,^(run|run-logs|test|build|dmg|stop|clean|xcode|reset)$$,Baplet,quit)
 
 run: build ## Build and (re)start the app
 	@pkill -x Baplet || true
@@ -57,6 +70,15 @@ test: ## Run the unit tests
 
 build: ## Build the app (Debug)
 	@$(XCODEBUILD) -configuration Debug build 2>&1 | $(SUMMARY)
+
+dmg: ## Build an ad-hoc signed release DMG (VERSION=1.2.3 BUILD_NUMBER=n)
+	@$(XCODEBUILD) $(ADHOC_FLAGS) -configuration Release MARKETING_VERSION=$(VERSION) CURRENT_PROJECT_VERSION=$(BUILD_NUMBER) build 2>&1 | $(SUMMARY)
+	@rm -rf build/dmg-staging && mkdir -p build/dmg-staging
+	@cp -R $(DERIVED)/Build/Products/Release/Baplet.app build/dmg-staging/
+	@ln -s /Applications build/dmg-staging/Applications
+	@hdiutil create -quiet -volname "Baplet $(VERSION)" -srcfolder build/dmg-staging -ov -format UDZO $(DMG)
+	@rm -rf build/dmg-staging
+	@echo "Created $(DMG) ($$(du -h $(DMG) | cut -f1))."
 
 stop: ## Quit the running app
 	@pkill -x Baplet && echo "Baplet stopped." || echo "Baplet wasn't running."
