@@ -116,8 +116,14 @@ enum BrowserService {
     /// `profile.profiles_order` when present, otherwise alphabetically by display name.
     private static func chromiumProfiles(supportFolder: String) -> [BrowserProfile] {
         let file = applicationSupport.appendingPathComponent(supportFolder).appendingPathComponent("Local State")
-        guard let data = try? Data(contentsOf: file),
-              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+        guard let data = try? Data(contentsOf: file) else { return [] }
+        return parseChromiumProfiles(localState: data)
+    }
+
+    /// Parses the contents of a Chromium `Local State` file. Split out from the file reading
+    /// so it can be tested with fixed data. Returns an empty list for malformed JSON.
+    static func parseChromiumProfiles(localState data: Data) -> [BrowserProfile] {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let profile = root["profile"] as? [String: Any],
               let cache = profile["info_cache"] as? [String: Any] else { return [] }
 
@@ -138,7 +144,12 @@ enum BrowserService {
     private static func firefoxProfiles() -> [BrowserProfile] {
         let file = applicationSupport.appendingPathComponent("Firefox/profiles.ini")
         guard let text = try? String(contentsOf: file, encoding: .utf8) else { return [] }
+        return parseFirefoxProfiles(profilesIni: text)
+    }
 
+    /// Parses the contents of Firefox's `profiles.ini`. Split out from the file reading so it
+    /// can be tested with fixed text.
+    static func parseFirefoxProfiles(profilesIni text: String) -> [BrowserProfile] {
         var profiles: [BrowserProfile] = []
         var inProfileSection = false
         for rawLine in text.components(separatedBy: .newlines) {
@@ -181,7 +192,7 @@ enum BrowserService {
 
     /// Command-line arguments that make the browser open `url` in the given profile.
     /// A second instance launched this way hands the request to the already-running browser.
-    private static func launchArguments(for family: ProfileFamily, profileID: String, url: URL) -> [String] {
+    static func launchArguments(for family: ProfileFamily, profileID: String, url: URL) -> [String] {
         switch family {
         case .chromium:
             ["--profile-directory=\(profileID)", url.absoluteString]

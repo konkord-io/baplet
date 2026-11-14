@@ -52,7 +52,9 @@ struct MenuBarLabel: View {
     /// the menu ever being opened.
     /// When access is granted but no calendars are selected, it opens the welcome guide on a
     /// fresh install, or Settings if the guide was already finished.
+    /// Does nothing when the app only hosts unit tests (`AppEnvironment.isRunningTests`).
     private func startUp() async {
+        guard !AppEnvironment.isRunningTests else { return }
         if !Self.registeredTodayShortcut {
             Self.registeredTodayShortcut = true
             KeyboardShortcuts.onKeyUp(for: .showToday) { [calendarService, settingsStore] in
@@ -84,6 +86,13 @@ struct MenuBarLabel: View {
         calendarService.fetchEvents(for: settingsStore)
         alarmManager.recheckNow()
     }
+}
+
+/// Facts about the process Baplet is running in.
+enum AppEnvironment {
+    /// True when the app was launched as the host of a unit-test bundle, so startup work that
+    /// prompts the user or registers system-wide hooks can be skipped.
+    static let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 }
 
 /// Identifiers of Baplet's window scenes, shared by the scene definitions and the code that

@@ -156,10 +156,10 @@ final class TodayListModel {
     private var lastPointerLocation = NSEvent.mouseLocation
 
     /// Starts with the meeting happening now, or the next one; all-day events are skipped.
-    /// When every meeting has ended, the last one is selected.
-    init(events: [EKEvent]) {
+    /// When every meeting has ended, the last one is selected. `now` defaults to the current
+    /// time; tests pass a fixed one.
+    init(events: [EKEvent], now: Date = Date()) {
         self.events = events
-        let now = Date()
         let timed = events.indices.filter { !events[$0].isAllDay }
         self.selectedIndex = timed.first { events[$0].endDate > now } ?? timed.last ?? events.indices.first
     }

@@ -143,7 +143,7 @@ final class SettingsStore {
         didSet { defaults.set(onboardingCompleted, forKey: Keys.onboardingCompleted) }
     }
 
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
 
     private enum Keys {
         static let enabledCalendarIDs = "enabledCalendarIDs"
@@ -167,10 +167,13 @@ final class SettingsStore {
         static let migratedFromSandboxContainer = "migratedFromSandboxContainer"
     }
 
-    /// Loads all persisted settings from UserDefaults, applying sensible defaults
-    /// for values that haven't been set yet.
-    init() {
-        Self.migrateFromSandboxContainerIfNeeded(into: defaults)
+    /// Loads all persisted settings from the given UserDefaults (the app's own by default;
+    /// tests pass a throwaway suite), applying sensible defaults for values that haven't been
+    /// set yet. `sandboxContainerPlist` is the old sandbox container's preferences file to
+    /// migrate from; tests pass a temporary or missing file so the real container is never read.
+    init(defaults: UserDefaults = .standard, sandboxContainerPlist: URL? = SettingsStore.defaultSandboxContainerPlist) {
+        self.defaults = defaults
+        Self.migrateFromSandboxContainerIfNeeded(into: defaults, containerPlist: sandboxContainerPlist)
 
         let storedCalendarIDs = defaults.stringArray(forKey: Keys.enabledCalendarIDs) ?? []
         self.enabledCalendarIDs = Set(storedCalendarIDs)
@@ -209,14 +212,26 @@ final class SettingsStore {
     /// Copies settings saved while Baplet was sandboxed (before profile support needed the
     /// sandbox off) from the old container into the regular preferences, once. Only keys not
     /// already present are copied, so nothing set since then is overwritten.
-    private static func migrateFromSandboxContainerIfNeeded(into defaults: UserDefaults) {
-        guard !defaults.bool(forKey: Keys.migratedFromSandboxContainer),
-              let bundleID = Bundle.main.bundleIdentifier else { return }
+    private static func migrateFromSandboxContainerIfNeeded(into defaults: UserDefaults, containerPlist: URL?) {
+        guard !defaults.bool(forKey: Keys.migratedFromSandboxContainer) else { return }
         defer { defaults.set(true, forKey: Keys.migratedFromSandboxContainer) }
 
-        let containerPlist = FileManager.default.homeDirectoryForCurrentUser
+        guard let containerPlist,
+              let old = NSDictionary(contentsOf: containerPlist) as? [String: Any] else { return }
+        copyMissingKeys(from: old, into: defaults)
+    }
+
+    /// The preferences file of the app's old sandbox container, or nil when the bundle has no
+    /// identifier.
+    static var defaultSandboxContainerPlist: URL? {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return nil }
+        return FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Containers/\(bundleID)/Data/Library/Preferences/\(bundleID).plist")
-        guard let old = NSDictionary(contentsOf: containerPlist) as? [String: Any] else { return }
+    }
+
+    /// Copies each entry of `old` into `defaults` unless the key already has a value there.
+    /// Split out from the container lookup so the merge rule can be tested without the file.
+    static func copyMissingKeys(from old: [String: Any], into defaults: UserDefaults) {
         for (key, value) in old where defaults.object(forKey: key) == nil {
             defaults.set(value, forKey: key)
         }
