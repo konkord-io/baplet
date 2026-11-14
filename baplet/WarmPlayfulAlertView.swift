@@ -5,13 +5,12 @@
 //  Created by Jakob Vad Nielsen on 20/05/2026.
 //
 
-import AppKit
 import SwiftUI
 
 /// Full-screen alert with a warm purple gradient background, rounded card, and playful styling.
-/// Features coral/pink chunky buttons, a large hero cat image, and a bouncy spring entrance.
+/// Features coral/pink chunky buttons, a large goldfish image, and a bouncy spring entrance.
 struct WarmPlayfulAlertView: View {
-    let props: FullScreenAlertProps
+    let props: AlertProps
 
     @State private var appeared = false
 
@@ -85,11 +84,11 @@ struct WarmPlayfulAlertView: View {
         }
     }
 
-    /// Snooze split button: click snoozes for 5 min, dropdown arrow shows all durations.
+    /// Snooze split button: click snoozes for the default time, dropdown arrow shows all durations.
     private var snoozeButton: some View {
         HStack(spacing: 0) {
-            Button { props.onSnooze(5) } label: {
-                Text("Snooze 5m")
+            Button { props.onSnooze(AlertProps.defaultSnoozeMinutes) } label: {
+                Text("Snooze \(AlertProps.defaultSnoozeMinutes)m")
                     .fontWeight(.bold)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 20)
@@ -103,7 +102,7 @@ struct WarmPlayfulAlertView: View {
                 .frame(width: 1, height: 24)
 
             Menu {
-                ForEach(props.snoozeDurations, id: \.self) { minutes in
+                ForEach(AlertProps.snoozeDurations, id: \.self) { minutes in
                     Button("\(minutes) min") { props.onSnooze(minutes) }
                 }
             } label: {

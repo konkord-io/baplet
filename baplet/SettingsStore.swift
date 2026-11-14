@@ -15,6 +15,7 @@ enum AlertStyle: String, CaseIterable, Identifiable {
     case fullScreenBoldMinimal
     case fullScreenWarmPlayful
 
+    /// Identity for `ForEach` and pickers: the stored raw value.
     var id: String { rawValue }
 
     /// Human-readable label for display in the settings UI.
@@ -49,6 +50,7 @@ enum TodayReturnAction: String, CaseIterable, Identifiable {
     case joinMeeting
     case openCalendar
 
+    /// Identity for `ForEach` and pickers: the stored raw value.
     var id: String { rawValue }
 
     /// Label for the Settings picker and the Today panel's key hints.
@@ -102,15 +104,22 @@ final class SettingsStore {
         didSet { defaults.set(minutesBefore, forKey: Keys.minutesBefore) }
     }
 
-    /// How many days of events to display in the menu bar popover.
+    /// How many days of events to display in the menu bar window.
     var daysToShow: Int {
         didSet { defaults.set(daysToShow, forKey: Keys.daysToShow) }
     }
 
-    /// Event identifiers for which the user has disabled alarms via context menu.
+    /// `EKEvent.alarmKey`s of the event occurrences whose alarm the user switched off (row
+    /// checkbox, Today panel D key, or Dismiss on an alert). Keys of ended events are pruned.
     var disabledEventAlarms: Set<String> {
         didSet { defaults.set(Array(disabledEventAlarms), forKey: Keys.disabledEventAlarms) }
     }
+
+    /// Lead time used until the user picks one, in minutes.
+    static let defaultMinutesBefore = 5
+
+    /// Days of events shown until the user picks a number.
+    static let defaultDaysToShow = 2
 
     /// Bundle identifier of the browser that opens meeting links; nil means the system default.
     var meetingBrowserID: String? {
@@ -134,7 +143,7 @@ final class SettingsStore {
         didSet { defaults.set(onboardingCompleted, forKey: Keys.onboardingCompleted) }
     }
 
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
 
     private enum Keys {
         static let enabledCalendarIDs = "enabledCalendarIDs"
@@ -145,7 +154,11 @@ final class SettingsStore {
         static let alarmsPaused = "alarmsPaused"
         static let minutesBefore = "minutesBefore"
         static let daysToShow = "daysToShow"
-        static let disabledEventAlarms = "disabledEventAlarms"
+        static let disabledEventAlarms = "disabledEventAlarmKeys"
+        /// Legacy key holding bare event identifiers, which silenced every occurrence of a
+        /// recurring event. Dropped on launch, since the old entries can't be mapped to one
+        /// occurrence.
+        static let legacyDisabledEventAlarms = "disabledEventAlarms"
         static let meetingBrowserID = "meetingBrowserID"
         static let meetingBrowserProfileID = "meetingBrowserProfileID"
         static let onboardingCompleted = "onboardingCompleted"
@@ -154,10 +167,13 @@ final class SettingsStore {
         static let migratedFromSandboxContainer = "migratedFromSandboxContainer"
     }
 
-    /// Loads all persisted settings from UserDefaults, applying sensible defaults
-    /// for values that haven't been set yet.
-    init() {
-        Self.migrateFromSandboxContainerIfNeeded(into: defaults)
+    /// Loads all persisted settings from the given UserDefaults (the app's own by default;
+    /// tests pass a throwaway suite), applying sensible defaults for values that haven't been
+    /// set yet. `sandboxContainerPlist` is the old sandbox container's preferences file to
+    /// migrate from; tests pass a temporary or missing file so the real container is never read.
+    init(defaults: UserDefaults = .standard, sandboxContainerPlist: URL? = SettingsStore.defaultSandboxContainerPlist) {
+        self.defaults = defaults
+        Self.migrateFromSandboxContainerIfNeeded(into: defaults, containerPlist: sandboxContainerPlist)
 
         let storedCalendarIDs = defaults.stringArray(forKey: Keys.enabledCalendarIDs) ?? []
         self.enabledCalendarIDs = Set(storedCalendarIDs)
@@ -173,25 +189,16 @@ final class SettingsStore {
             self.alertStyle = .popupDialog
         }
 
-        // Defaults to true when the key has never been set (object is nil).
-        if defaults.object(forKey: Keys.soundEnabled) != nil {
-            self.soundEnabled = defaults.bool(forKey: Keys.soundEnabled)
-        } else {
-            self.soundEnabled = true
-        }
-
-        if defaults.object(forKey: Keys.alarmsPaused) != nil {
-            self.alarmsPaused = defaults.bool(forKey: Keys.alarmsPaused)
-        } else {
-            self.alarmsPaused = false
-        }
+        self.soundEnabled = defaults.object(forKey: Keys.soundEnabled) as? Bool ?? true
+        self.alarmsPaused = defaults.bool(forKey: Keys.alarmsPaused)
 
         let storedMinutesBefore = defaults.integer(forKey: Keys.minutesBefore)
-        self.minutesBefore = storedMinutesBefore > 0 ? storedMinutesBefore : 5
+        self.minutesBefore = storedMinutesBefore > 0 ? storedMinutesBefore : Self.defaultMinutesBefore
 
         let storedDaysToShow = defaults.integer(forKey: Keys.daysToShow)
-        self.daysToShow = storedDaysToShow > 0 ? storedDaysToShow : 2
+        self.daysToShow = storedDaysToShow > 0 ? storedDaysToShow : Self.defaultDaysToShow
 
+        defaults.removeObject(forKey: Keys.legacyDisabledEventAlarms)
         let storedDisabledAlarms = defaults.stringArray(forKey: Keys.disabledEventAlarms) ?? []
         self.disabledEventAlarms = Set(storedDisabledAlarms)
 
@@ -205,31 +212,62 @@ final class SettingsStore {
     /// Copies settings saved while Baplet was sandboxed (before profile support needed the
     /// sandbox off) from the old container into the regular preferences, once. Only keys not
     /// already present are copied, so nothing set since then is overwritten.
-    private static func migrateFromSandboxContainerIfNeeded(into defaults: UserDefaults) {
-        guard !defaults.bool(forKey: Keys.migratedFromSandboxContainer),
-              let bundleID = Bundle.main.bundleIdentifier else { return }
+    private static func migrateFromSandboxContainerIfNeeded(into defaults: UserDefaults, containerPlist: URL?) {
+        guard !defaults.bool(forKey: Keys.migratedFromSandboxContainer) else { return }
         defer { defaults.set(true, forKey: Keys.migratedFromSandboxContainer) }
 
-        let containerPlist = FileManager.default.homeDirectoryForCurrentUser
+        guard let containerPlist,
+              let old = NSDictionary(contentsOf: containerPlist) as? [String: Any] else { return }
+        copyMissingKeys(from: old, into: defaults)
+    }
+
+    /// The preferences file of the app's old sandbox container, or nil when the bundle has no
+    /// identifier.
+    static var defaultSandboxContainerPlist: URL? {
+        guard let bundleID = Bundle.main.bundleIdentifier else { return nil }
+        return FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Containers/\(bundleID)/Data/Library/Preferences/\(bundleID).plist")
-        guard let old = NSDictionary(contentsOf: containerPlist) as? [String: Any] else { return }
+    }
+
+    /// Copies each entry of `old` into `defaults` unless the key already has a value there.
+    /// Split out from the container lookup so the merge rule can be tested without the file.
+    static func copyMissingKeys(from old: [String: Any], into defaults: UserDefaults) {
         for (key, value) in old where defaults.object(forKey: key) == nil {
             defaults.set(value, forKey: key)
         }
     }
 
-    /// Toggles the alarm enabled state for a specific event by its identifier.
-    func toggleEventAlarm(eventID: String) {
-        if disabledEventAlarms.contains(eventID) {
-            disabledEventAlarms.remove(eventID)
+    /// Switches the alarm of one event occurrence (by `EKEvent.alarmKey`) on or off.
+    func toggleEventAlarm(key: String) {
+        if disabledEventAlarms.contains(key) {
+            disabledEventAlarms.remove(key)
         } else {
-            disabledEventAlarms.insert(eventID)
+            disabledEventAlarms.insert(key)
         }
     }
 
-    /// Returns whether the alarm is enabled for a specific event.
-    func isAlarmEnabled(eventID: String) -> Bool {
-        !disabledEventAlarms.contains(eventID)
+    /// Switches the alarm of one event occurrence off; used when its alert is dismissed.
+    func disableEventAlarm(key: String) {
+        disabledEventAlarms.insert(key)
+    }
+
+    /// Returns whether the alarm is enabled for one event occurrence.
+    func isAlarmEnabled(key: String) -> Bool {
+        !disabledEventAlarms.contains(key)
+    }
+
+    /// Forgets switched-off alarms of occurrences that have ended, so the stored set doesn't
+    /// grow forever. A key counts as ended when its occurrence started before `now` and it is
+    /// not among `liveKeys`, the keys of the currently fetched events (which include events
+    /// still running). Only writes when something was removed.
+    func pruneDisabledEventAlarms(keeping liveKeys: Set<String>, now: Date) {
+        let kept = disabledEventAlarms.filter { key in
+            guard let start = EventAlarmKey.startDate(of: key) else { return false }
+            return start >= now || liveKeys.contains(key)
+        }
+        if kept.count != disabledEventAlarms.count {
+            disabledEventAlarms = kept
+        }
     }
 
     /// Toggles whether a calendar is included in the enabled set.

@@ -10,14 +10,30 @@
 		B4A1E0012FC0000000000001 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = B4A1E0012FC0000000000003 /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		B4A1E0022FC000000000000A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 364F86BF2FB35F8E00420E64 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 364F86C62FB35F8E00420E64;
+			remoteInfo = baplet;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		364F86C72FB35F8E00420E64 /* Baplet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Baplet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B4A1E0022FC0000000000001 /* bapletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = bapletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		364F86C92FB35F8E00420E64 /* baplet */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = baplet;
+			sourceTree = "<group>";
+		};
+		B4A1E0022FC0000000000002 /* bapletTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = bapletTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -31,6 +47,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B4A1E0022FC0000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -38,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				364F86C92FB35F8E00420E64 /* baplet */,
+				B4A1E0022FC0000000000002 /* bapletTests */,
 				364F86C82FB35F8E00420E64 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -46,6 +70,7 @@
 			isa = PBXGroup;
 			children = (
 				364F86C72FB35F8E00420E64 /* Baplet.app */,
+				B4A1E0022FC0000000000001 /* bapletTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -76,6 +101,29 @@
 			productReference = 364F86C72FB35F8E00420E64 /* Baplet.app */;
 			productType = "com.apple.product-type.application";
 		};
+		B4A1E0022FC0000000000006 /* bapletTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B4A1E0022FC0000000000007 /* Build configuration list for PBXNativeTarget "bapletTests" */;
+			buildPhases = (
+				B4A1E0022FC0000000000003 /* Sources */,
+				B4A1E0022FC0000000000004 /* Frameworks */,
+				B4A1E0022FC0000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B4A1E0022FC000000000000B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B4A1E0022FC0000000000002 /* bapletTests */,
+			);
+			name = bapletTests;
+			packageProductDependencies = (
+			);
+			productName = bapletTests;
+			productReference = B4A1E0022FC0000000000001 /* bapletTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -88,6 +136,10 @@
 				TargetAttributes = {
 					364F86C62FB35F8E00420E64 = {
 						CreatedOnToolsVersion = 26.4.1;
+					};
+					B4A1E0022FC0000000000006 = {
+						CreatedOnToolsVersion = 26.4.1;
+						TestTargetID = 364F86C62FB35F8E00420E64;
 					};
 				};
 			};
@@ -109,12 +161,20 @@
 			projectRoot = "";
 			targets = (
 				364F86C62FB35F8E00420E64 /* baplet */,
+				B4A1E0022FC0000000000006 /* bapletTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		364F86C52FB35F8E00420E64 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B4A1E0022FC0000000000005 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -131,7 +191,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B4A1E0022FC0000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B4A1E0022FC000000000000B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 364F86C62FB35F8E00420E64 /* baplet */;
+			targetProxy = B4A1E0022FC000000000000A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		364F86D52FB35F8F00420E64 /* Debug */ = {
@@ -328,6 +403,46 @@
 			};
 			name = Release;
 		};
+		B4A1E0022FC0000000000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H2MCB54VDW;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.3;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.konkord.bapletTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Baplet.app/Contents/MacOS/Baplet";
+			};
+			name = Debug;
+		};
+		B4A1E0022FC0000000000009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H2MCB54VDW;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.3;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.konkord.bapletTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Baplet.app/Contents/MacOS/Baplet";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -345,6 +460,15 @@
 			buildConfigurations = (
 				364F86D82FB35F8F00420E64 /* Debug */,
 				364F86D92FB35F8F00420E64 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B4A1E0022FC0000000000007 /* Build configuration list for PBXNativeTarget "bapletTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B4A1E0022FC0000000000008 /* Debug */,
+				B4A1E0022FC0000000000009 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
