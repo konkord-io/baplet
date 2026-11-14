@@ -38,7 +38,7 @@ struct SettingsView: View {
             List(SettingsPane.allCases, id: \.self, selection: $selectedPane) { pane in
                 Label(pane.label, systemImage: pane.icon)
             }
-            .navigationSplitViewColumnWidth(min: 160, ideal: 180)
+            .navigationSplitViewColumnWidth(180)
             .toolbar(removing: .sidebarToggle)
         } detail: {
             switch selectedPane {
@@ -48,7 +48,10 @@ struct SettingsView: View {
                 AlertsPane()
             }
         }
-        .frame(minWidth: 500, idealWidth: 580, minHeight: 350, idealHeight: 420)
+        .frame(width: 580, height: 420)
+        .onAppear {
+            selectedPane = .calendars
+        }
     }
 }
 

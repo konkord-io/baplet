@@ -9,8 +9,9 @@ import AppKit
 import SwiftUI
 
 /// SwiftUI view displayed inside the popup dialog alert panel.
-/// Shows event details with dismiss and snooze actions.
-/// The snooze button defaults to 5 minutes but offers a dropdown for other durations.
+/// Shows event details with snooze, dismiss and open actions.
+/// Snooze defaults to 5 minutes with a dropdown for other durations; Open joins the meeting
+/// (or opens Calendar when there is no link) and offers both choices in its dropdown.
 struct AlertPopupView: View {
     let title: String
     let time: String
@@ -19,6 +20,7 @@ struct AlertPopupView: View {
     let meetingLink: AlertService.MeetingLink?
     let onDismiss: () -> Void
     let onSnooze: (Int) -> Void
+    let onOpenMeeting: () -> Void
     let onOpenInCalendar: () -> Void
 
     /// Available snooze durations in minutes.
@@ -30,10 +32,6 @@ struct AlertPopupView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(height: 200)
-
-            Text("Upcoming Event")
-                .font(.headline)
-                .foregroundStyle(.secondary)
 
             VStack(spacing: 6) {
                 Text(title)
@@ -68,31 +66,40 @@ struct AlertPopupView: View {
                 }
                 .controlSize(.large)
 
-                Menu {
-                    if let meetingLink {
-                        Button {
-                            onDismiss()
-                            NSWorkspace.shared.open(meetingLink.url)
-                        } label: {
-                            Label("Dismiss and join \(meetingLink.serviceName)", systemImage: meetingLink.icon)
-                        }
-                    }
+                Button("Dismiss") { onDismiss() }
+                    .controlSize(.large)
 
-                    Button {
-                        onOpenInCalendar()
-                    } label: {
-                        Label("Dismiss and open in Calendar", systemImage: "calendar")
-                    }
-                } label: {
-                    Text("Dismiss")
-                } primaryAction: {
-                    onDismiss()
-                }
-                .controlSize(.large)
-                .keyboardShortcut(.return, modifiers: [])
+                openButton
+                    .controlSize(.large)
             }
         }
         .padding(24)
         .frame(width: 320)
+    }
+
+    /// Open button: with a meeting link, a click joins the meeting and the dropdown offers
+    /// "Open meeting" and "Open calendar"; without one, it is a plain button that opens Calendar.
+    @ViewBuilder
+    private var openButton: some View {
+        if let meetingLink {
+            Menu {
+                Button {
+                    onOpenMeeting()
+                } label: {
+                    Label("Open meeting", systemImage: meetingLink.icon)
+                }
+                Button {
+                    onOpenInCalendar()
+                } label: {
+                    Label("Open calendar", systemImage: "calendar")
+                }
+            } label: {
+                Text("Open")
+            } primaryAction: {
+                onOpenMeeting()
+            }
+        } else {
+            Button("Open") { onOpenInCalendar() }
+        }
     }
 }

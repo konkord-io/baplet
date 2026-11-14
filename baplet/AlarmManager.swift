@@ -15,14 +15,10 @@ enum MenuBarStatus {
     case active
     case paused
 
-    /// The SF Symbol name for this status.
-    var icon: String {
-        switch self {
-        case .idle: "bell"
-        case .upcoming: "bell.badge"
-        case .active: "bell.badge.fill"
-        case .paused: "bell.slash"
-        }
+    /// Whether the menu bar icon is drawn faded; true only while alarms are paused.
+    var isDimmed: Bool {
+        if case .paused = self { return true }
+        return false
     }
 
     /// Optional text label shown next to the icon, or nil for icon-only.

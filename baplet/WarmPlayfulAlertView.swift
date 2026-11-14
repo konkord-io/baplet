@@ -22,11 +22,6 @@ struct WarmPlayfulAlertView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(height: 200)
 
-            Text("Upcoming Event")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundStyle(Color(red: 1.0, green: 0.8, blue: 0.3))
-
             VStack(spacing: 10) {
                 Text(props.title)
                     .font(.system(size: 30, weight: .bold))
@@ -51,6 +46,7 @@ struct WarmPlayfulAlertView: View {
             HStack(spacing: 16) {
                 snoozeButton
                 dismissButton
+                openButton
             }
             .padding(.top, 8)
         }
@@ -134,11 +130,28 @@ struct WarmPlayfulAlertView: View {
         .shadow(color: Color.orange.opacity(0.4), radius: 8, y: 3)
     }
 
-    /// Dismiss split button: click dismisses, dropdown arrow shows join-meeting and open-in-Calendar.
+    /// Dismiss button: turns off the alarm for this event.
     private var dismissButton: some View {
+        Button { props.onDismiss() } label: {
+            Text("Dismiss")
+                .fontWeight(.bold)
+                .foregroundStyle(.white.opacity(0.85))
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .background(.white.opacity(0.15))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    /// Open split button: a click joins the meeting (or opens Calendar when there is no link);
+    /// with a meeting link, the dropdown offers "Open meeting" and "Open calendar".
+    /// Opening in any way stops the alarm.
+    private var openButton: some View {
         HStack(spacing: 0) {
-            Button { props.onDismiss() } label: {
-                Text("Dismiss")
+            Button { props.openDefault() } label: {
+                Text("Open")
                     .fontWeight(.bold)
                     .foregroundStyle(.white.opacity(0.85))
                     .padding(.horizontal, 20)
@@ -147,34 +160,32 @@ struct WarmPlayfulAlertView: View {
             }
             .buttonStyle(.plain)
 
-            Rectangle()
-                .fill(.white.opacity(0.3))
-                .frame(width: 1, height: 24)
+            if let meetingLink = props.meetingLink {
+                Rectangle()
+                    .fill(.white.opacity(0.3))
+                    .frame(width: 1, height: 24)
 
-            Menu {
-                if let meetingLink = props.meetingLink {
+                Menu {
                     Button {
-                        props.onDismiss()
-                        NSWorkspace.shared.open(meetingLink.url)
+                        props.onOpenMeeting()
                     } label: {
-                        Label("Dismiss and join \(meetingLink.serviceName)", systemImage: meetingLink.icon)
+                        Label("Open meeting", systemImage: meetingLink.icon)
                     }
-                }
-
-                Button {
-                    props.onOpenInCalendar()
+                    Button {
+                        props.onOpenInCalendar()
+                    } label: {
+                        Label("Open calendar", systemImage: "calendar")
+                    }
                 } label: {
-                    Label("Dismiss and open in Calendar", systemImage: "calendar")
+                    Image(systemName: "chevron.down")
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.85))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
                 }
-            } label: {
-                Image(systemName: "chevron.down")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.85))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 14)
-                    .contentShape(Rectangle())
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .background(.white.opacity(0.15))
         .clipShape(RoundedRectangle(cornerRadius: 16))

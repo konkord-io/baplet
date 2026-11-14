@@ -27,26 +27,34 @@ struct MenuBarContentView: View {
 
     @Environment(\.openWindow) private var openWindow
 
+    /// Bumped on every refresh click; the refresh icon spins one turn each time it changes,
+    /// giving visible feedback for a reload that otherwise completes instantly.
+    @State private var refreshCount = 0
+
     /// Header bar displaying the app name with refresh, settings, and quit buttons.
     private var header: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 4) {
             Text("Baplet")
                 .font(.headline)
             Spacer()
             Button {
+                refreshCount += 1
                 calendarService.refresh(enabledCalendarIDs: settingsStore.enabledCalendarIDs, daysToShow: settingsStore.daysToShow)
             } label: {
                 Image(systemName: "arrow.clockwise")
+                    .symbolEffect(.rotate, value: refreshCount)
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.headerIcon)
+            .help("Refresh events")
 
             Button {
                 settingsStore.alarmsPaused.toggle()
                 alarmManager.recheckNow()
             } label: {
                 Image(systemName: settingsStore.alarmsPaused ? "bell.slash" : "bell")
+                    .foregroundStyle(settingsStore.alarmsPaused ? AnyShapeStyle(Color("PausedRed")) : AnyShapeStyle(.primary))
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.headerIcon)
             .help(settingsStore.alarmsPaused ? "Resume alarms" : "Pause alarms")
 
             Button {
@@ -54,14 +62,14 @@ struct MenuBarContentView: View {
             } label: {
                 Image(systemName: "gear")
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.headerIcon)
 
             Button {
                 NSApp.terminate(nil)
             } label: {
                 Image(systemName: "power")
             }
-            .buttonStyle(.borderless)
+            .buttonStyle(.headerIcon)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
