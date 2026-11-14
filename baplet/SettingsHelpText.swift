@@ -37,7 +37,7 @@ struct SettingsHelpText: View {
             return
         }
         running.terminate()
-        Task { @MainActor in
+        Task {
             for _ in 0..<30 where !running.isTerminated {
                 try? await Task.sleep(for: .milliseconds(100))
             }

@@ -15,6 +15,7 @@ enum AlertStyle: String, CaseIterable, Identifiable {
     case fullScreenBoldMinimal
     case fullScreenWarmPlayful
 
+    /// Identity for `ForEach` and pickers: the stored raw value.
     var id: String { rawValue }
 
     /// Human-readable label for display in the settings UI.
@@ -49,6 +50,7 @@ enum TodayReturnAction: String, CaseIterable, Identifiable {
     case joinMeeting
     case openCalendar
 
+    /// Identity for `ForEach` and pickers: the stored raw value.
     var id: String { rawValue }
 
     /// Label for the Settings picker and the Today panel's key hints.
@@ -102,15 +104,22 @@ final class SettingsStore {
         didSet { defaults.set(minutesBefore, forKey: Keys.minutesBefore) }
     }
 
-    /// How many days of events to display in the menu bar popover.
+    /// How many days of events to display in the menu bar window.
     var daysToShow: Int {
         didSet { defaults.set(daysToShow, forKey: Keys.daysToShow) }
     }
 
-    /// Event identifiers for which the user has disabled alarms via context menu.
+    /// `EKEvent.alarmKey`s of the event occurrences whose alarm the user switched off (row
+    /// checkbox, Today panel D key, or Dismiss on an alert). Keys of ended events are pruned.
     var disabledEventAlarms: Set<String> {
         didSet { defaults.set(Array(disabledEventAlarms), forKey: Keys.disabledEventAlarms) }
     }
+
+    /// Lead time used until the user picks one, in minutes.
+    static let defaultMinutesBefore = 5
+
+    /// Days of events shown until the user picks a number.
+    static let defaultDaysToShow = 2
 
     /// Bundle identifier of the browser that opens meeting links; nil means the system default.
     var meetingBrowserID: String? {
@@ -145,7 +154,11 @@ final class SettingsStore {
         static let alarmsPaused = "alarmsPaused"
         static let minutesBefore = "minutesBefore"
         static let daysToShow = "daysToShow"
-        static let disabledEventAlarms = "disabledEventAlarms"
+        static let disabledEventAlarms = "disabledEventAlarmKeys"
+        /// Legacy key holding bare event identifiers, which silenced every occurrence of a
+        /// recurring event. Dropped on launch, since the old entries can't be mapped to one
+        /// occurrence.
+        static let legacyDisabledEventAlarms = "disabledEventAlarms"
         static let meetingBrowserID = "meetingBrowserID"
         static let meetingBrowserProfileID = "meetingBrowserProfileID"
         static let onboardingCompleted = "onboardingCompleted"
@@ -173,25 +186,16 @@ final class SettingsStore {
             self.alertStyle = .popupDialog
         }
 
-        // Defaults to true when the key has never been set (object is nil).
-        if defaults.object(forKey: Keys.soundEnabled) != nil {
-            self.soundEnabled = defaults.bool(forKey: Keys.soundEnabled)
-        } else {
-            self.soundEnabled = true
-        }
-
-        if defaults.object(forKey: Keys.alarmsPaused) != nil {
-            self.alarmsPaused = defaults.bool(forKey: Keys.alarmsPaused)
-        } else {
-            self.alarmsPaused = false
-        }
+        self.soundEnabled = defaults.object(forKey: Keys.soundEnabled) as? Bool ?? true
+        self.alarmsPaused = defaults.bool(forKey: Keys.alarmsPaused)
 
         let storedMinutesBefore = defaults.integer(forKey: Keys.minutesBefore)
-        self.minutesBefore = storedMinutesBefore > 0 ? storedMinutesBefore : 5
+        self.minutesBefore = storedMinutesBefore > 0 ? storedMinutesBefore : Self.defaultMinutesBefore
 
         let storedDaysToShow = defaults.integer(forKey: Keys.daysToShow)
-        self.daysToShow = storedDaysToShow > 0 ? storedDaysToShow : 2
+        self.daysToShow = storedDaysToShow > 0 ? storedDaysToShow : Self.defaultDaysToShow
 
+        defaults.removeObject(forKey: Keys.legacyDisabledEventAlarms)
         let storedDisabledAlarms = defaults.stringArray(forKey: Keys.disabledEventAlarms) ?? []
         self.disabledEventAlarms = Set(storedDisabledAlarms)
 
@@ -218,18 +222,37 @@ final class SettingsStore {
         }
     }
 
-    /// Toggles the alarm enabled state for a specific event by its identifier.
-    func toggleEventAlarm(eventID: String) {
-        if disabledEventAlarms.contains(eventID) {
-            disabledEventAlarms.remove(eventID)
+    /// Switches the alarm of one event occurrence (by `EKEvent.alarmKey`) on or off.
+    func toggleEventAlarm(key: String) {
+        if disabledEventAlarms.contains(key) {
+            disabledEventAlarms.remove(key)
         } else {
-            disabledEventAlarms.insert(eventID)
+            disabledEventAlarms.insert(key)
         }
     }
 
-    /// Returns whether the alarm is enabled for a specific event.
-    func isAlarmEnabled(eventID: String) -> Bool {
-        !disabledEventAlarms.contains(eventID)
+    /// Switches the alarm of one event occurrence off; used when its alert is dismissed.
+    func disableEventAlarm(key: String) {
+        disabledEventAlarms.insert(key)
+    }
+
+    /// Returns whether the alarm is enabled for one event occurrence.
+    func isAlarmEnabled(key: String) -> Bool {
+        !disabledEventAlarms.contains(key)
+    }
+
+    /// Forgets switched-off alarms of occurrences that have ended, so the stored set doesn't
+    /// grow forever. A key counts as ended when its occurrence started before `now` and it is
+    /// not among `liveKeys`, the keys of the currently fetched events (which include events
+    /// still running). Only writes when something was removed.
+    func pruneDisabledEventAlarms(keeping liveKeys: Set<String>, now: Date) {
+        let kept = disabledEventAlarms.filter { key in
+            guard let start = EventAlarmKey.startDate(of: key) else { return false }
+            return start >= now || liveKeys.contains(key)
+        }
+        if kept.count != disabledEventAlarms.count {
+            disabledEventAlarms = kept
+        }
     }
 
     /// Toggles whether a calendar is included in the enabled set.

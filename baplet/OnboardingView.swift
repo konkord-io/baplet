@@ -86,7 +86,7 @@ struct OnboardingView: View {
     private func primaryAction() {
         if step == .finish {
             settingsStore.onboardingCompleted = true
-            dismissWindow(id: "welcome")
+            dismissWindow(id: WindowID.welcome)
         } else {
             move(by: 1)
         }
@@ -182,14 +182,7 @@ private struct OnboardingCalendarsStep: View {
                                     .foregroundStyle(.secondary)
                                     .textCase(.uppercase)
                                 ForEach(sourceCalendars, id: \.calendarIdentifier) { calendar in
-                                    Toggle(isOn: binding(for: calendar)) {
-                                        HStack(spacing: 8) {
-                                            Circle()
-                                                .fill(Color(cgColor: calendar.cgColor))
-                                                .frame(width: 10, height: 10)
-                                            Text(calendar.title)
-                                        }
-                                    }
+                                    CalendarToggle(calendar: calendar)
                                 }
                             }
                         }
@@ -203,8 +196,7 @@ private struct OnboardingCalendarsStep: View {
 
             HStack {
                 Button("Select All") {
-                    settingsStore.enabledCalendarIDs = Set(calendarService.calendars.map(\.calendarIdentifier))
-                    refreshAfterSelectionChange()
+                    settingsStore.enabledCalendarIDs = calendarService.allCalendarIDs
                 }
                 Spacer()
                 Button("Test") {
@@ -215,6 +207,9 @@ private struct OnboardingCalendarsStep: View {
         }
         .sheet(isPresented: Binding(get: { preview != nil }, set: { if !$0 { preview = nil } })) {
             previewSheet(preview ?? [])
+        }
+        .onChange(of: settingsStore.enabledCalendarIDs) {
+            preview = nil
         }
     }
 
@@ -233,14 +228,12 @@ private struct OnboardingCalendarsStep: View {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(events, id: \.calendarItemIdentifier) { event in
                         HStack(spacing: 8) {
-                            Circle()
-                                .fill(Color(cgColor: event.calendar.cgColor))
-                                .frame(width: 8, height: 8)
+                            CalendarColorDot(calendar: event.calendar, size: 8)
                             Text(Self.when(event))
                                 .monospacedDigit()
                                 .foregroundStyle(.secondary)
                                 .frame(width: 110, alignment: .leading)
-                            Text(event.title ?? "No Title")
+                            Text(event.displayTitle)
                                 .lineLimit(1)
                         }
                     }
@@ -257,27 +250,10 @@ private struct OnboardingCalendarsStep: View {
         .frame(width: 440)
     }
 
-    /// Checkbox binding for one calendar, persisted through `SettingsStore`.
-    private func binding(for calendar: EKCalendar) -> Binding<Bool> {
-        Binding(
-            get: { settingsStore.isCalendarEnabled(calendarID: calendar.calendarIdentifier) },
-            set: { _ in
-                settingsStore.toggleCalendar(calendarID: calendar.calendarIdentifier)
-                refreshAfterSelectionChange()
-            }
-        )
-    }
-
-    /// Reloads the menu's event list for the new selection and clears a stale Test result.
-    private func refreshAfterSelectionChange() {
-        calendarService.fetchEvents(enabledCalendarIDs: settingsStore.enabledCalendarIDs, daysToShow: settingsStore.daysToShow)
-        preview = nil
-    }
-
     /// Short day-and-time label for a preview row, e.g. "Mon 09:30" or "Tue All day".
     private static func when(_ event: EKEvent) -> String {
         let day = event.startDate.formatted(.dateTime.weekday(.abbreviated))
-        let time = event.isAllDay ? "All day" : event.startDate.formatted(date: .omitted, time: .shortened)
+        let time = event.isAllDay ? "All day" : EventTimeFormat.time(event.startDate)
         return "\(day) \(time)"
     }
 }
@@ -356,17 +332,7 @@ struct AlertStylePreview: View {
         case .popupDialog:
             ZStack {
                 LinearGradient(colors: [Color(red: 0.35, green: 0.4, blue: 0.6), Color(red: 0.55, green: 0.45, blue: 0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                AlertPopupView(
-                    title: Self.sample.title,
-                    time: Self.sample.time,
-                    location: Self.sample.location,
-                    calendarName: Self.sample.calendarName,
-                    meetingLink: Self.sample.meetingLink,
-                    onDismiss: {},
-                    onSnooze: { _ in },
-                    onOpenMeeting: {},
-                    onOpenInCalendar: {}
-                )
+                AlertPopupView(props: Self.sample)
                 .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
                 .shadow(radius: 20)
             }
@@ -379,16 +345,12 @@ struct AlertStylePreview: View {
     }
 
     /// The sample event shown in every preview.
-    private static let sample = FullScreenAlertProps(
+    private static let sample = AlertProps(
         title: "Design Review",
         time: "Now 09:58 \u{00b7} 10:00 \u{2013} 10:30",
         location: "Room 4",
         calendarName: "Work",
-        meetingLink: AlertService.MeetingLink(
-            serviceName: "Google Meet",
-            icon: "video",
-            url: URL(string: "https://meet.google.com/abc-defg-hij")!
-        ),
+        meetingLink: .sample,
         onDismiss: {},
         onSnooze: { _ in },
         onOpenMeeting: {},

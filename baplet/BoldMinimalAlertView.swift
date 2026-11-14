@@ -5,13 +5,12 @@
 //  Created by Jakob Vad Nielsen on 20/05/2026.
 //
 
-import AppKit
 import SwiftUI
 
 /// Full-screen alert with oversized typography floating on a dark backdrop.
 /// No card container — content floats directly on the background with a slide-up entrance.
 struct BoldMinimalAlertView: View {
-    let props: FullScreenAlertProps
+    let props: AlertProps
 
     @State private var appeared = false
 
@@ -67,11 +66,11 @@ struct BoldMinimalAlertView: View {
         }
     }
 
-    /// Snooze split button: click snoozes for 5 min, dropdown arrow shows all durations.
+    /// Snooze split button: click snoozes for the default time, dropdown arrow shows all durations.
     private var snoozeButton: some View {
         HStack(spacing: 0) {
-            Button { props.onSnooze(5) } label: {
-                Text("Snooze 5m")
+            Button { props.onSnooze(AlertProps.defaultSnoozeMinutes) } label: {
+                Text("Snooze \(AlertProps.defaultSnoozeMinutes)m")
                     .font(.body)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
@@ -86,7 +85,7 @@ struct BoldMinimalAlertView: View {
                 .frame(width: 1, height: 24)
 
             Menu {
-                ForEach(props.snoozeDurations, id: \.self) { minutes in
+                ForEach(AlertProps.snoozeDurations, id: \.self) { minutes in
                     Button("\(minutes) min") { props.onSnooze(minutes) }
                 }
             } label: {

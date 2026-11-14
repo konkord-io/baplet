@@ -11,32 +11,47 @@ import SwiftUI
 
 /// Namespace providing static methods for presenting alarm alerts.
 /// Uses NSPanel for programmatic window control that SwiftUI scenes can't provide.
+/// Only one alert is on screen at a time; an alert that goes away without the user choosing
+/// an action (closed with its close button, or replaced by another alert) counts as snoozed,
+/// so an alarm is never silently lost.
 enum AlertService {
-    /// Strong reference to the currently displayed alert panel, if any.
-    private static var activePanel: NSPanel?
+    /// The currently displayed alert panel, if any.
+    private static var activePanel: AlertPanel?
 
-    /// Local key-down monitor for the active alert's shortcuts; removed when the panel closes.
-    private static var keyMonitor: Any?
+    /// Key-down monitor for the active alert's shortcuts; stopped when the panel closes.
+    private static let keyMonitor = PanelKeyMonitor()
+
+    /// Snoozes the alert on screen with the caller's own snooze action, without touching the
+    /// panel. Run when the alert is replaced by another one; nil while no alert is showing.
+    private static var snoozeActiveAlert: (() -> Void)?
 
     /// How long after an alert appears before its single-letter shortcuts respond, so keys
     /// already being typed into another app don't trigger an action by accident.
     private static let shortcutArmDelay: TimeInterval = 1.0
 
-    /// A detected meeting link with its service name, icon, and URL.
+    /// A detected meeting link with its service name and URL.
     struct MeetingLink {
         let serviceName: String
-        let icon: String
         let url: URL
+
+        /// SF Symbol shown for the link; every supported service uses the video camera.
+        var icon: String { "video" }
+
+        /// A Google Meet link used by the test alert and the welcome guide's style previews.
+        static let sample = MeetingLink(
+            serviceName: "Google Meet",
+            url: URL(string: "https://meet.google.com/abc-defg-hij")!
+        )
     }
 
-    /// Supported conferencing platforms with their URL patterns, display names, and SF Symbols.
-    private static let meetingPatterns: [(pattern: NSRegularExpression, name: String, icon: String)] = [
-        (try! NSRegularExpression(pattern: #"https://meet\.google\.com/[a-z]+-[a-z]+-[a-z]+[^\s<\"]*"#), "Google Meet", "video"),
-        (try! NSRegularExpression(pattern: #"https://[a-z0-9.-]*zoom\.us/j/\d+[^\s<\"]*"#), "Zoom", "video"),
-        (try! NSRegularExpression(pattern: #"https://teams\.microsoft\.com/l/meetup-join/[^\s<\"]+"#), "Teams", "video"),
-        (try! NSRegularExpression(pattern: #"https://[a-z0-9]+\.webex\.com/[^\s<\"]+"#), "Webex", "video"),
-        (try! NSRegularExpression(pattern: #"https://[a-z0-9.-]*goto(meeting|webinar)\.com/join/\d+"#), "GoTo Meeting", "video"),
-        (try! NSRegularExpression(pattern: #"https://[a-z0-9]+\.slack\.com/[^\s<\"]*huddle[^\s<\"]*"#), "Slack Huddle", "video"),
+    /// Supported conferencing platforms with their URL patterns and display names.
+    private static let meetingPatterns: [(pattern: NSRegularExpression, name: String)] = [
+        (try! NSRegularExpression(pattern: #"https://meet\.google\.com/[a-z]+-[a-z]+-[a-z]+[^\s<\"]*"#), "Google Meet"),
+        (try! NSRegularExpression(pattern: #"https://[a-z0-9.-]*zoom\.us/j/\d+[^\s<\"]*"#), "Zoom"),
+        (try! NSRegularExpression(pattern: #"https://teams\.microsoft\.com/l/meetup-join/[^\s<\"]+"#), "Teams"),
+        (try! NSRegularExpression(pattern: #"https://[a-z0-9]+\.webex\.com/[^\s<\"]+"#), "Webex"),
+        (try! NSRegularExpression(pattern: #"https://[a-z0-9.-]*goto(meeting|webinar)\.com/join/\d+"#), "GoTo Meeting"),
+        (try! NSRegularExpression(pattern: #"https://[a-z0-9]+\.slack\.com/[^\s<\"]*huddle[^\s<\"]*"#), "Slack Huddle"),
     ]
 
     /// Extracts a meeting URL from an EKEvent by searching its URL, location, and notes fields
@@ -54,7 +69,7 @@ enum AlertService {
                 if let match = entry.pattern.firstMatch(in: text, range: range),
                    let matchRange = Range(match.range, in: text),
                    let url = URL(string: String(text[matchRange])) {
-                    return MeetingLink(serviceName: entry.name, icon: entry.icon, url: url)
+                    return MeetingLink(serviceName: entry.name, url: url)
                 }
             }
         }
@@ -67,13 +82,16 @@ enum AlertService {
     }
 
     /// Opens a calendar event in Apple Calendar by creating a temporary .ics file with the event's UID.
-    /// Calendar.app recognizes the existing event and shows its detail/info view.
-    static func openEventInCalendar(
-        title: String,
-        startDate: Date,
-        endDate: Date,
-        uid: String
-    ) {
+    /// Calendar.app recognizes the existing event and shows its detail/info view. When the event
+    /// has no external UID yet or the file can't be written, Calendar is simply opened.
+    static func openEventInCalendar(_ event: EKEvent) {
+        guard let uid = event.calendarItemExternalIdentifier,
+              let startDate = event.startDate,
+              let endDate = event.endDate else {
+            openCalendarApp()
+            return
+        }
+
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withYear, .withMonth, .withDay, .withTime, .withTimeZone]
         formatter.timeZone = TimeZone(identifier: "UTC")
@@ -89,10 +107,10 @@ enum AlertService {
         BEGIN:VCALENDAR
         VERSION:2.0
         BEGIN:VEVENT
-        UID:\(uid)
+        UID:\(icsEscaped(uid))
         DTSTART:\(dtStart)
         DTEND:\(dtEnd)
-        SUMMARY:\(title)
+        SUMMARY:\(icsEscaped(event.displayTitle))
         END:VEVENT
         END:VCALENDAR
         """
@@ -104,29 +122,55 @@ enum AlertService {
             FocusHandoff.prepare(forAppOpening: tempURL)
             NSWorkspace.shared.open(tempURL)
         } catch {
-            // Fall back to just opening Calendar.app
-            if let calendarURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iCal") {
-                FocusHandoff.prepare(forBundleID: "com.apple.iCal")
-                NSWorkspace.shared.open(calendarURL)
-            }
+            openCalendarApp()
         }
     }
 
-    /// Shows a floating popup dialog panel with event details and snooze/dismiss/open actions.
-    /// Creates an NSPanel with .titled and .closable style, floating above other windows.
-    static func showPopupAlert(
-        title: String,
-        time: String,
-        location: String?,
-        calendarName: String,
-        meetingLink: MeetingLink? = nil,
-        onDismiss: @escaping () -> Void,
-        onSnooze: @escaping (Int) -> Void,
-        onOpenInCalendar: @escaping () -> Void,
-        openMeetingURL: @escaping (URL) -> Void
-    ) {
-        closeActivePanel()
+    /// Opens Apple Calendar without a specific event; the fallback when an event can't be
+    /// handed over as an .ics file.
+    private static func openCalendarApp() {
+        guard let calendarURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iCal") else { return }
+        FocusHandoff.prepare(forBundleID: "com.apple.iCal")
+        NSWorkspace.shared.open(calendarURL)
+    }
 
+    /// Escapes a value for an iCalendar text field (RFC 5545 §3.3.11), so titles containing
+    /// backslashes, commas, semicolons or line breaks still produce a valid file.
+    private static func icsEscaped(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: ";", with: "\\;")
+            .replacingOccurrences(of: ",", with: "\\,")
+            .replacingOccurrences(of: "\r\n", with: "\\n")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\n")
+    }
+
+    /// Shows an alert in the given style: a floating popup dialog, or a full-screen overlay.
+    /// An alert already on screen is closed and snoozed first, so it comes back later instead
+    /// of being lost. The panel's actions close the panel before running the caller's own
+    /// action, and opening the meeting or the event also dismisses the alarm. Closing the
+    /// popup with its close button snoozes it.
+    static func show(style: AlertStyle, props: AlertProps) {
+        let replacedAlertSnooze = snoozeActiveAlert
+        closeActivePanel()
+        replacedAlertSnooze?()
+
+        let panelProps = closingPanelFirst(props)
+        let panel = style.isFullScreen
+            ? makeFullScreenPanel(style: style, props: panelProps)
+            : makePopupPanel(props: panelProps)
+
+        panel.onUserClose = { panelProps.onSnooze(AlertProps.defaultSnoozeMinutes) }
+        panel.makeKeyAndOrderFront(nil)
+        activePanel = panel
+        snoozeActiveAlert = { props.onSnooze(AlertProps.defaultSnoozeMinutes) }
+        installKeyShortcuts(for: panel, props: panelProps)
+    }
+
+    /// Builds the popup dialog: a titled, closable floating panel sized to its content and
+    /// centred on screen.
+    private static func makePopupPanel(props: AlertProps) -> AlertPanel {
         let panel = AlertPanel(
             contentRect: NSRect(x: 0, y: 0, width: 320, height: 300),
             styleMask: [.titled, .closable, .nonactivatingPanel],
@@ -137,61 +181,23 @@ enum AlertService {
         panel.level = .floating
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
-        panel.center()
 
-        let actions = PanelActions(
-            meetingLink: meetingLink,
-            onDismiss: onDismiss,
-            onSnooze: onSnooze,
-            onOpenInCalendar: onOpenInCalendar,
-            openMeetingURL: openMeetingURL
-        )
-        let rootView = AlertPopupView(
-            title: title,
-            time: time,
-            location: location,
-            calendarName: calendarName,
-            meetingLink: meetingLink,
-            onDismiss: actions.dismiss,
-            onSnooze: actions.snooze,
-            onOpenMeeting: actions.openMeeting,
-            onOpenInCalendar: actions.openInCalendar
-        )
-        let hostingView = NSHostingView(rootView: rootView)
+        let hostingView = NSHostingView(rootView: AlertPopupView(props: props))
         hostingView.sizingOptions = []
-        let size = hostingView.fittingSize
-        panel.setContentSize(size)
+        panel.setContentSize(hostingView.fittingSize)
         panel.contentView = hostingView
         panel.center()
-        panel.makeKeyAndOrderFront(nil)
-
-        activePanel = panel
-        installKeyShortcuts(actions)
+        return panel
     }
 
-    /// Shows a full-screen overlay panel styled according to the given AlertStyle.
-    /// Creates a borderless NSPanel covering the entire screen and hosts a
-    /// FullScreenAlertRouter that picks the correct visual style. The panel sits one level
-    /// below pop-up menus: high enough to cover the Dock, menu bar and other windows, yet low
-    /// enough that the Snooze and Open dropdown menus appear on top of it.
-    static func showFullScreenAlert(
-        style: AlertStyle,
-        title: String,
-        time: String,
-        location: String?,
-        calendarName: String,
-        meetingLink: MeetingLink? = nil,
-        onDismiss: @escaping () -> Void,
-        onSnooze: @escaping (Int) -> Void,
-        onOpenInCalendar: @escaping () -> Void,
-        openMeetingURL: @escaping (URL) -> Void
-    ) {
-        closeActivePanel()
-
-        guard let screen = NSScreen.main else { return }
-
+    /// Builds a borderless panel covering the main screen that hosts a FullScreenAlertRouter
+    /// for the chosen style. The panel sits one level below pop-up menus: high enough to cover
+    /// the Dock, menu bar and other windows, yet low enough that the Snooze and Open dropdown
+    /// menus appear on top of it.
+    private static func makeFullScreenPanel(style: AlertStyle, props: AlertProps) -> AlertPanel {
+        let frame = (NSScreen.main ?? NSScreen.screens.first)?.frame ?? NSRect(x: 0, y: 0, width: 1024, height: 768)
         let panel = AlertPanel(
-            contentRect: screen.frame,
+            contentRect: frame,
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -202,116 +208,78 @@ enum AlertService {
         panel.isOpaque = false
         panel.backgroundColor = NSColor.black.withAlphaComponent(0.85)
 
-        let actions = PanelActions(
-            meetingLink: meetingLink,
-            onDismiss: onDismiss,
-            onSnooze: onSnooze,
-            onOpenInCalendar: onOpenInCalendar,
-            openMeetingURL: openMeetingURL
-        )
-        let props = FullScreenAlertProps(
-            title: title,
-            time: time,
-            location: location,
-            calendarName: calendarName,
-            meetingLink: meetingLink,
-            onDismiss: actions.dismiss,
-            onSnooze: actions.snooze,
-            onOpenMeeting: actions.openMeeting,
-            onOpenInCalendar: actions.openInCalendar
-        )
-
-        let hostingView = NSHostingView(rootView: FullScreenAlertRouter(
-            style: style,
-            props: props
-        ))
+        let hostingView = NSHostingView(rootView: FullScreenAlertRouter(style: style, props: props))
         hostingView.sizingOptions = []
         panel.contentView = hostingView
-        panel.makeKeyAndOrderFront(nil)
-
-        activePanel = panel
-        installKeyShortcuts(actions)
+        return panel
     }
 
-    /// Closes and releases the currently active alert panel, if one exists,
-    /// and removes its keyboard shortcut monitor.
-    static func closeActivePanel() {
-        if let keyMonitor {
-            NSEvent.removeMonitor(keyMonitor)
-        }
-        keyMonitor = nil
-        activePanel?.close()
+    /// Returns a copy of `props` whose actions first close the alert panel. Opening the
+    /// meeting or the event also dismisses, so the alarm stops once the user has gone there.
+    private static func closingPanelFirst(_ props: AlertProps) -> AlertProps {
+        AlertProps(
+            title: props.title,
+            time: props.time,
+            location: props.location,
+            calendarName: props.calendarName,
+            meetingLink: props.meetingLink,
+            onDismiss: {
+                closeActivePanel()
+                props.onDismiss()
+            },
+            onSnooze: { minutes in
+                closeActivePanel()
+                props.onSnooze(minutes)
+            },
+            onOpenMeeting: {
+                closeActivePanel()
+                props.onDismiss()
+                props.onOpenMeeting()
+            },
+            onOpenInCalendar: {
+                closeActivePanel()
+                props.onDismiss()
+                props.onOpenInCalendar()
+            }
+        )
+    }
+
+    /// Closes and releases the currently active alert panel, if one exists, and stops its
+    /// keyboard shortcuts. Runs none of the alert's actions.
+    private static func closeActivePanel() {
+        keyMonitor.stop()
+        snoozeActiveAlert = nil
+        guard let panel = activePanel else { return }
         activePanel = nil
+        panel.onUserClose = nil
+        if panel.isVisible {
+            panel.close()
+        }
     }
 
     /// Listens for the alert's keyboard shortcuts while its panel is key:
     /// O or Return opens (meeting if there is a link, otherwise Calendar), D dismisses and
-    /// S snoozes for 5 minutes. Keys pressed within `shortcutArmDelay` of the alert appearing
-    /// are swallowed and ignored; any other key passes through untouched.
-    private static func installKeyShortcuts(_ actions: PanelActions) {
+    /// S snoozes for the default time. Keys pressed within `shortcutArmDelay` of the alert
+    /// appearing are swallowed and ignored; any other key passes through untouched.
+    private static func installKeyShortcuts(for panel: AlertPanel, props: AlertProps) {
         let armedAt = Date().addingTimeInterval(shortcutArmDelay)
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            guard event.window === activePanel,
-                  event.modifierFlags.isDisjoint(with: [.command, .control, .option]) else {
+        keyMonitor.start(for: panel) { event in
+            guard event.modifierFlags.isDisjoint(with: [.command, .control, .option]) else {
                 return event
             }
-            let isReturn = event.keyCode == 36 || event.keyCode == 76
+            let isReturn = event.isReturnKey
             let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
             guard isReturn || ["o", "d", "s"].contains(key) else { return event }
             guard Date() >= armedAt else { return nil }
 
             if isReturn || key == "o" {
-                actions.openDefault()
+                props.openDefault()
             } else if key == "d" {
-                actions.dismiss()
+                props.onDismiss()
             } else {
-                actions.snooze(5)
+                props.onSnooze(AlertProps.defaultSnoozeMinutes)
             }
             return nil
-        }
-    }
-
-    /// The four alert actions, each wrapped to close the panel first. Opening in any way
-    /// also dismisses, so the alarm stops once the user has gone to the meeting or event.
-    private struct PanelActions {
-        let dismiss: () -> Void
-        let snooze: (Int) -> Void
-        let openMeeting: () -> Void
-        let openInCalendar: () -> Void
-        let openDefault: () -> Void
-
-        /// Builds the wrapped actions from the caller's dismiss/snooze/Calendar callbacks,
-        /// the event's meeting link (if any) and how to open it (the browser chosen in Settings).
-        init(
-            meetingLink: MeetingLink?,
-            onDismiss: @escaping () -> Void,
-            onSnooze: @escaping (Int) -> Void,
-            onOpenInCalendar: @escaping () -> Void,
-            openMeetingURL: @escaping (URL) -> Void
-        ) {
-            let openMeeting = {
-                closeActivePanel()
-                onDismiss()
-                if let meetingLink {
-                    openMeetingURL(meetingLink.url)
-                }
-            }
-            let openInCalendar = {
-                closeActivePanel()
-                onDismiss()
-                onOpenInCalendar()
-            }
-            self.dismiss = {
-                closeActivePanel()
-                onDismiss()
-            }
-            self.snooze = { minutes in
-                closeActivePanel()
-                onSnooze(minutes)
-            }
-            self.openMeeting = openMeeting
-            self.openInCalendar = openInCalendar
-            self.openDefault = meetingLink != nil ? openMeeting : openInCalendar
         }
     }
 }
@@ -320,59 +288,48 @@ enum AlertService {
 /// styles receive keyboard shortcuts. As a non-activating panel it takes key focus without
 /// activating Baplet or pulling the user out of their current app.
 private final class AlertPanel: NSPanel {
+    /// Runs after the user closes the panel themselves (the popup's close button), so the
+    /// alert can be snoozed instead of vanishing with its alarm still active. Cleared before
+    /// Baplet closes the panel itself.
+    var onUserClose: (() -> Void)?
+
+    /// Lets the borderless full-screen panel take key focus for the keyboard shortcuts.
     override var canBecomeKey: Bool { true }
+
+    /// Closes the panel, then runs `onUserClose` once if it is still set.
+    override func close() {
+        let handler = onUserClose
+        onUserClose = nil
+        super.close()
+        handler?()
+    }
 }
 
 extension AlertService {
     /// Fires a sample alert in the currently selected style, with a mock event and Google Meet
-    /// link, so the user can preview it from Settings or the welcome guide.
+    /// link, so the user can preview it from Settings or the welcome guide. Its own actions
+    /// do nothing except joining the sample meeting; a real alert it replaces is snoozed.
     static func showTestAlert(settings settingsStore: SettingsStore) {
-        let mockMeetingLink = AlertService.MeetingLink(
-            serviceName: "Google Meet",
-            icon: "video",
-            url: URL(string: "https://meet.google.com/abc-defg-hij")!
-        )
-
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        formatter.dateStyle = .none
         let now = Date()
         let mockEnd = now.addingTimeInterval(30 * 60)
-        let timeString = "Now \(formatter.string(from: now)) \u{00b7} \(formatter.string(from: now)) \u{2013} \(formatter.string(from: mockEnd))"
 
         if settingsStore.soundEnabled {
             playAlarmSound()
         }
 
-        let style = settingsStore.alertStyle
-
-        switch style {
-        case .popupDialog:
-            showPopupAlert(
+        show(
+            style: settingsStore.alertStyle,
+            props: AlertProps(
                 title: "Test Event",
-                time: timeString,
+                time: EventTimeFormat.alertLine(now: now, start: now, end: mockEnd),
                 location: "Conference Room A",
                 calendarName: "Work",
-                meetingLink: mockMeetingLink,
+                meetingLink: .sample,
                 onDismiss: {},
                 onSnooze: { _ in },
-                onOpenInCalendar: {},
-                openMeetingURL: { url in BrowserService.openMeeting(url, settings: settingsStore) }
+                onOpenMeeting: { BrowserService.openMeeting(MeetingLink.sample.url, settings: settingsStore) },
+                onOpenInCalendar: {}
             )
-
-        case .fullScreenGlassmorphic, .fullScreenBoldMinimal, .fullScreenWarmPlayful:
-            showFullScreenAlert(
-                style: style,
-                title: "Test Event",
-                time: timeString,
-                location: "Conference Room A",
-                calendarName: "Work",
-                meetingLink: mockMeetingLink,
-                onDismiss: {},
-                onSnooze: { _ in },
-                onOpenInCalendar: {},
-                openMeetingURL: { url in BrowserService.openMeeting(url, settings: settingsStore) }
-            )
-        }
+        )
     }
 }

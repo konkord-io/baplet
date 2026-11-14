@@ -12,6 +12,7 @@ struct OpenSourcePackage: Identifiable {
     let url: URL
     let licenseText: String
 
+    /// Identity for `ForEach` and the license sheet: the package name.
     var id: String { name }
 }
 

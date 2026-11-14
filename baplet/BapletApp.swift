@@ -27,7 +27,7 @@ struct BapletApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("Settings", id: "settings") {
+        Window("Settings", id: WindowID.settings) {
             SettingsView()
                 .environment(calendarService)
                 .environment(settingsStore)
@@ -36,7 +36,7 @@ struct BapletApp: App {
         .windowResizability(.contentSize)
         .windowLevel(.floating)
 
-        Window("Welcome to Baplet", id: "welcome") {
+        Window("Welcome to Baplet", id: WindowID.welcome) {
             OnboardingView()
                 .environment(calendarService)
                 .environment(settingsStore)
