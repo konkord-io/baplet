@@ -28,6 +28,10 @@ A macOS menu bar app that keeps you on top of your calendar events with customiz
 
 ## Building
 
+From the repo root, run `make` for a menu of developer tasks (run, run with logs, test, build, stop, clean, open in Xcode), or call one directly, e.g. `make run` or `make test`.
+
+Or in Xcode:
+
 1. Open `baplet.xcodeproj` in Xcode
 2. Select the `baplet` scheme
 3. Build and run (Cmd+R)

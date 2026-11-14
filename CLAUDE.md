@@ -4,6 +4,8 @@ macOS menu bar app (SwiftUI, `MenuBarExtra`) that fires alarm alerts before cale
 
 ## Build
 
+`make` opens an interactive menu; `make run | run-logs | test | build | stop | clean | xcode | reset` run the same tasks directly (`reset` has its own menu: `reset-welcome`, `reset-settings`, `reset-calendar`, `reset-all`; add `FORCE=1` to skip the confirmation) (builds go to `build/DerivedData`, git-ignored). Prefer these over hand-written xcodebuild lines. The raw commands below are what the Makefile wraps.
+
 `xcode-select` points at CommandLineTools on this machine, so prefix with `DEVELOPER_DIR`:
 
 ```sh
