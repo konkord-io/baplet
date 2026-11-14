@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title">
+  <title id="title">Baplet Dock icon</title>
+  <rect x="84" y="88" width="856" height="848" rx="179" fill="#17171A"/>
+  <path fill="#FFF5E7" fill-rule="evenodd" d="
+    M 333 242 H 449 V 438
+    C 471 424 498 415 526 415
+    C 624 415 697 496 697 602
+    C 697 708 623 788 525 788
+    C 484 788 449 773 423 750
+    V 780 H 333 Z
+    M 595 602
+    A 83 85 0 1 0 429 602
+    A 83 85 0 1 0 595 602 Z"/>
+  <rect x="568" y="244" width="123" height="123" fill="#FF641F"/>
+</svg>
