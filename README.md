@@ -62,7 +62,7 @@ Every pull request and push to `main` that changes code is built and tested by G
    - run the tests
    - built `Baplet-1.3.0.dmg`. The tag sets the app version, and the GitHub run number becomes the build number.
    - created a **draft** release with the DMG and install notes. It's not public yet.
-5. Open **GitHub → Releases**, check the draft (download and try the DMG, edit the notes), then click **Publish release**.
+5. Open **GitHub → Releases** and check the draft: download and try the DMG, and replace the **What's new** placeholder with the changes (Baplet's update window shows these notes to users). Then click **Publish release**.
 
 To build the same DMG locally without releasing: `make dmg VERSION=1.3.0`.
 
