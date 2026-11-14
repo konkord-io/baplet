@@ -1,10 +1,10 @@
 # Baplet
 
+A macOS menu bar app that keeps you on top of your calendar events with customizable alarm alerts.
+
 <p align="center">
   <img src="design/baplet.svg" width="128" height="128" alt="Baplet logo">
 </p>
-
-A macOS menu bar app that keeps you on top of your calendar events with customizable alarm alerts.
 
 **[⬇ Download Baplet for macOS](https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg)** (macOS 26.3+, free) · [website](https://baplet.konkord.io) · [all releases](https://github.com/konkord-io/baplet/releases)
 
