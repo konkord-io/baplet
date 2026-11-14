@@ -1,8 +1,8 @@
+# Baplet
+
 <p align="center">
   <img src="design/baplet.svg" width="128" height="128" alt="Baplet logo">
 </p>
-
-# Baplet
 
 A macOS menu bar app that keeps you on top of your calendar events with customizable alarm alerts.
 
