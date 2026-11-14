@@ -9,7 +9,7 @@ Planning document. Nothing here has been run or created yet. Facts about this pr
 - Hardened runtime is on, sandbox is off (`ENABLE_APP_SANDBOX = NO`). The only entitlement is `com.apple.security.personal-information.calendars`. `LSUIElement` is set.
 - Only dependency: KeyboardShortcuts 3.1.0 (pinned, `Package.resolved` committed).
 - `scripts/release.sh` already does archive, Developer ID export, DMG, notarize, staple. It cannot work yet: it needs a paid account and a stored notarytool profile built from an Apple ID and app-specific password.
-- The GitHub repo `konkord-io/baplet` is private, owned by an organisation on the Free plan, with no CI and no releases.
+- The GitHub repo `konkord-io/baplet` is **public** (since 2026-11-14), owned by an organisation on the Free plan. CI (`ci.yml`) and an ad-hoc-signed draft-release workflow (`release.yml`) exist; see the README's "Releasing" section.
 - The README's "Sharing the app with friends" section describes the free workaround (Gatekeeper "Open Anyway"). It is the right answer until Phase 0 is done, and obsolete after.
 
 What "no Gatekeeper warnings" requires: the app is signed with a Developer ID Application certificate, uses the hardened runtime, has been notarized by Apple, and the notarization ticket is stapled so it also works offline. See [Notarizing macOS software](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution) and [Signing Mac software with Developer ID](https://developer.apple.com/developer-id/).
@@ -26,7 +26,7 @@ Only the Account Holder can do the certificate steps, so do them from the enroll
 - [ ] **Create an App Store Connect API key** for notarization: App Store Connect, Users and Access, Integrations, Team Keys, `+`. Name it "baplet-ci-notary". Download the `.p8` once (it cannot be downloaded again) and note the Key ID and the Issuer ID shown at the top of the page. See [Creating API keys](https://developer.apple.com/documentation/appstoreconnectapi/creating-api-keys-for-app-store-connect-api). Notarization works with the Developer role. Use Admin only if you also want the same key for Phase 2 uploads and cloud signing (see Phase 2). One key per purpose is cleaner and revocable. An API key is preferred over an Apple ID plus app-specific password because it is not tied to your personal login, can be revoked on its own and does not need 2FA handling.
 - [ ] **Register the bundle ID** `io.konkord.baplet` under Certificates, Identifiers & Profiles, Identifiers (explicit App ID, macOS). Not strictly required for Developer ID distribution of this app (no profile is needed), but required for Phase 2 and cheap to do now. Xcode's automatic signing may already have registered it under the Personal Team. Check that it exists under the paid team.
 - [ ] **Store notarytool credentials locally** to test by hand: `xcrun notarytool store-credentials baplet-notary --key AuthKey_XXXX.p8 --key-id XXXX --issuer ISSUER-UUID`. This is what `release.sh` expects under the profile name `baplet-notary`.
-- [ ] **Decide where downloads are hosted** (see "Publish" below). A private GitHub repo cannot serve public download links.
+- [x] **Decide where downloads are hosted.** Decided 2026-11-14: GitHub Releases on this (now public) repo; later also `baplet.konkord.io` on Cloudflare Pages.
 - [ ] **Dry run locally** once with `scripts/release.sh` (after the small fixes in "How `release.sh` relates") before building CI. A local success makes CI failures much easier to diagnose.
 
 After the first signed build, users who ran the old "Apple Development"-signed build may be asked for calendar access again, because the code signature (designated requirement) changed. Bundle ID stays the same, so `UserDefaults` are kept.
@@ -59,6 +59,8 @@ After the first signed build, users who ran the old "Apple Development"-signed b
 
 ### Where to host downloads
 
+> **Update (2026-11-14):** the repo is now public, so its own GitHub Releases are publicly downloadable. The separate releases repo and `RELEASES_REPO` below are no longer needed; keep releases on `konkord-io/baplet`. The rest of this subsection is kept for reference.
+
 A GitHub Release attached to a private repo is only downloadable by people with repo access, so it does not give a share-able link. Options:
 
 - A **separate public repo** (for example `konkord-io/baplet-releases`) that holds only releases. CI creates the release there with a token that can write to it. This is free and keeps the source private. It needs a fine-grained personal access token or a GitHub App token as a secret, because `GITHUB_TOKEN` is scoped to the current repo.
@@ -68,6 +70,8 @@ A GitHub Release attached to a private repo is only downloadable by people with 
 The workflow below assumes the separate public releases repo and keeps a `RELEASES_REPO` variable so it is easy to change.
 
 ### Cost of CI on GitHub
+
+> **Update (2026-11-14):** the repo is public, and GitHub-hosted standard runners (macOS included) are free for public repos, so the quota below no longer applies. The first CI run took 42 seconds.
 
 The organisation is on the Free plan: 2,000 included minutes per month, and macOS minutes count 10x, so about 200 macOS minutes. See [About billing for GitHub Actions](https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions). A release run (build plus two notarization waits) is roughly 10 to 20 runner minutes, so 100 to 200 billed minutes per release. That is one or two releases a month on the free quota, which is fine for a release-on-tag workflow. Do not run this workflow on every push. Build-only PR checks should be a separate, unsigned workflow or be skipped (build locally). Overage is billed per minute at the macOS rate. Verify current rates on the billing page. The same pipeline run on your own Mac costs nothing, and `release.sh` stays as the fallback.
 
@@ -342,7 +346,7 @@ Whichever you pick, App Store Connect rejects a build whose build number is not 
 | Apple Developer Program | US$99/yr | Needed for everything beyond the free workaround. Renew yearly or distribution stops and the Store listing is removed. |
 | Developer ID certificate | included | Valid 5 years; renewable. |
 | Notarization | free | Typically a few minutes per submission. |
-| GitHub Actions macOS minutes | free quota about 200 macOS min/month on the Free org plan, then per-minute | About 100 to 200 billed minutes per release. |
+| GitHub Actions macOS minutes | free (public repo) | No quota for standard runners on public repos. |
 | Download hosting | free (GitHub releases repo) to a few dollars/month | Domain for a nicer link about US$10 to 20/yr. |
 | Sparkle | free software, 1 to 2 days work | Hosting as above. |
 | App Store commission | 30%, or 15% under the Small Business Program | Taken from sales, no listing fee beyond the membership. |
@@ -359,7 +363,7 @@ Rough timeline (elapsed, assuming evenings and weekends):
 ## Open decisions for the owner
 
 1. **Individual or Organization enrolment.** Individual: fast, your legal name is shown as seller on the Store and in "identified developer" dialogs. Organization (konkord-io as a legal entity): company name shown, needs D-U-N-S and takes longer. Recommendation: Individual now. Apple supports moving an app to an organisation later through app transfer, but check if that matches your plans for selling.
-2. **Where to host downloads.** Separate public releases repo, own site or object storage, or make the source repo public. Recommendation: separate public `baplet-releases` repo for now, move to a site you control when you add Sparkle or want a branded link.
+2. **Where to host downloads.** *Decided 2026-11-14:* GitHub Releases on the now-public source repo; `baplet.konkord.io` on Cloudflare Pages (DMG is about 1.7 MB, well under the 25 MiB per-file limit) when the site is built.
 3. **One sandboxed app or two variants (Phase 2).** Recommendation: two variants from one codebase (direct build keeps browser profiles, App Store build hides them), with a compile flag, not a fork.
 4. **Whether Phase 2 is worth it.** The Store costs 15 to 30% of revenue, removes a feature, needs privacy policy and review upkeep, and a macOS 26.3 floor limits buyers. Recommendation: finish Phase 1 and observe real interest first. Revisit the Store once there are users asking for it or you want paid distribution.
 5. **Sparkle timing.** Recommendation: ship 1.0 without it, add in 1.1.
