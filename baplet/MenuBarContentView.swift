@@ -23,27 +23,6 @@ struct MenuBarContentView: View {
             content
         }
         .frame(width: 360)
-        .task {
-            await initialLoad()
-        }
-    }
-
-    /// Checks authorization on launch and either loads data directly or requests access.
-    private func initialLoad() async {
-        switch calendarService.authorizationStatus {
-        case .fullAccess:
-            calendarService.loadCalendars()
-            calendarService.fetchEvents(enabledCalendarIDs: settingsStore.enabledCalendarIDs, daysToShow: settingsStore.daysToShow)
-            alarmManager.start(calendarService: calendarService, settingsStore: settingsStore)
-        case .notDetermined:
-            await calendarService.requestAccess()
-            if calendarService.authorizationStatus == .fullAccess {
-                calendarService.fetchEvents(enabledCalendarIDs: settingsStore.enabledCalendarIDs, daysToShow: settingsStore.daysToShow)
-                alarmManager.start(calendarService: calendarService, settingsStore: settingsStore)
-            }
-        default:
-            break
-        }
     }
 
     @Environment(\.openWindow) private var openWindow
@@ -71,13 +50,7 @@ struct MenuBarContentView: View {
             .help(settingsStore.alarmsPaused ? "Resume alarms" : "Pause alarms")
 
             Button {
-                openWindow(id: "settings")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    NSApp.activate(ignoringOtherApps: true)
-                    for window in NSApp.windows where window.identifier?.rawValue == "settings" || window.title == "Settings" {
-                        window.makeKeyAndOrderFront(nil)
-                    }
-                }
+                openWindow.openSettings()
             } label: {
                 Image(systemName: "gear")
             }

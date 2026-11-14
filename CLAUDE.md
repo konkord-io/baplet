@@ -10,7 +10,7 @@ macOS menu bar app (SwiftUI, `MenuBarExtra`) that fires alarm alerts before cale
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project baplet.xcodeproj -scheme baplet -configuration Debug build
 ```
 
-No test target exists. Verify changes by building, then running the app (`/run`). Release pipeline: `scripts/release.sh` (archive → Developer ID export → DMG → notarize → staple).
+No test target exists. Verify changes by building, then running the app (`/run`). Launch the built app with `open` (add `--stdout`/`--stderr <file>` to capture `NSLog`); executing the binary directly makes the terminal the TCC-responsible process, so calendar status comes back as the terminal's. The app's prefs live in `~/Library/Containers/io.konkord.baplet/Data/Library/Preferences/`; after editing that plist, `killall -u $USER cfprefsd` or the app keeps reading the cached values. Release pipeline: `scripts/release.sh` (archive → Developer ID export → DMG → notarize → staple).
 
 ## Architecture
 
@@ -19,6 +19,8 @@ Three `@Observable` singletons are created in `BapletApp.swift` and injected wit
 - `CalendarService`: EventKit access, calendar list, event fetching.
 - `SettingsStore`: user preferences persisted to `UserDefaults`; owns legacy-key migrations (keep them when renaming keys).
 - `AlarmManager`: 30 s `Timer` loop that decides when to fire, tracks dismiss/snooze, and computes `MenuBarStatus` (menu bar icon + countdown).
+
+Startup (access request, event load, `AlarmManager.start`, opening Settings when no calendars are selected) lives in `MenuBarLabel`'s `.task`: the label renders at launch, while the `MenuBarExtra` window content is built lazily on first click.
 
 `AlertService` is a stateless enum that does the AppKit work SwiftUI can't: `NSPanel` alerts (floating popup, or borderless `.screenSaver`-level full screen), sound, meeting-link extraction, opening events in Calendar.
 

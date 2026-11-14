@@ -20,21 +20,10 @@ struct BapletApp: App {
                 .environment(settingsStore)
                 .environment(alarmManager)
         } label: {
-            Label {
-                Text("Baplet")
-            } icon: {
-                if let label = alarmManager.menuBarStatus.label {
-                    HStack(spacing: 2) {
-                        Image(systemName: alarmManager.menuBarStatus.icon)
-                        Text(label)
-                            .monospacedDigit()
-                    }
-                    .frame(minWidth: 40, alignment: .leading)
-                } else {
-                    Image(systemName: alarmManager.menuBarStatus.icon)
-                        .frame(minWidth: 20)
-                }
-            }
+            MenuBarLabel()
+                .environment(calendarService)
+                .environment(settingsStore)
+                .environment(alarmManager)
         }
         .menuBarExtraStyle(.window)
 
