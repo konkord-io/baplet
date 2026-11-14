@@ -22,8 +22,8 @@ A macOS menu bar app that keeps you on top of your calendar events with customiz
 
 ## Requirements
 
-- macOS 15.0+
-- Xcode 26+
+- macOS 26.3+
+- Xcode 26.6 (to build; CI uses the same version)
 - Calendar access permission
 
 ## Building
@@ -38,55 +38,61 @@ Or in Xcode:
 
 On first launch the app will request calendar access. Grant full access for all features to work.
 
-## Releases
+## Releasing
 
-Every PR and push to `main` is built and tested by GitHub Actions. To make a release, push a version tag:
+Every pull request and every push to `main` is built and tested by GitHub Actions (`.github/workflows/ci.yml`). Releases are made by pushing a version tag (`.github/workflows/release.yml`).
 
-```sh
-git tag v1.0.0 && git push origin v1.0.0
-```
+### Make a release
 
-CI builds an ad-hoc signed `Baplet-1.0.0.dmg` and creates a **draft** GitHub Release with install notes. Check it, then click Publish. Until Baplet is notarized (see `docs/distribution.md`), people who download it have to allow it once under System Settings → Privacy & Security → Open Anyway. `make dmg VERSION=1.0.0` builds the same DMG locally.
-
-## Sharing the app with friends (no Apple Developer Program needed)
-
-You can share the built app for free without paying the $99/yr Apple Developer Program fee. Your friends just have to bypass Gatekeeper once on first launch.
-
-### Build a shareable `.app`
-
-1. In Xcode: **Product → Archive** → in the Organizer, **Distribute App → Custom → Copy App** → pick a folder. You get a `Baplet.app` signed with your free "Apple Development" cert.
-2. Strip quarantine attributes and zip it:
+1. Make sure `main` is green (the CI check on the last merge passed) and pull it locally.
+2. Pick the version, using [semantic versioning](https://semver.org): `1.2.3` → `1.2.4` for fixes, `1.3.0` for new features.
+3. Tag and push:
    ```sh
-   xattr -cr Baplet.app
-   ditto -c -k --keepParent Baplet.app Baplet.zip
+   git tag v1.3.0 && git push origin v1.3.0
    ```
-3. Send `Baplet.zip` to your friends (email, Dropbox, GitHub release, etc.).
+4. In about a minute, CI has:
+   - run the tests
+   - built `Baplet-1.3.0.dmg`. The tag sets the app version, and the GitHub run number becomes the build number.
+   - created a **draft** release with the DMG and install notes. It's not public yet.
+5. Open **GitHub → Releases**, check the draft (download and try the DMG, edit the notes), then click **Publish release**.
 
-### What your friends do
+To build the same DMG locally without releasing: `make dmg VERSION=1.3.0`.
 
-1. Unzip and drag `Baplet.app` to `/Applications`.
-2. **First launch:** double-click → macOS will say "cannot be opened because the developer cannot be verified."
-3. Open **System Settings → Privacy & Security**, scroll to the bottom, click **"Open Anyway"** next to the Baplet message. Confirm.
+### Fixing a mistake
 
-After that one-time approval the app launches normally forever.
-
-If that's too much friction, your friend can run this single terminal command instead, and the app opens with no warning at all:
+If the build failed or the draft is wrong, delete the draft and the tag, fix `main`, and tag again:
 
 ```sh
-xattr -dr com.apple.quarantine /Applications/Baplet.app
+gh release delete v1.3.0 --yes
+git push origin --delete v1.3.0 && git tag -d v1.3.0
 ```
 
-### Trade-offs vs the paid path
+Once a release is published, don't reuse its version: ship the fix as the next patch version instead.
 
-|                              | Free (Apple Development cert)                  | Paid ($99/yr, Developer ID + notarize) |
-| ---------------------------- | ---------------------------------------------- | -------------------------------------- |
-| Cost                         | $0                                             | $99/yr                                 |
-| Friend's first launch        | Manual Privacy & Security approval             | Just double-click                      |
-| Cert lifetime                | ~1 year (Apple Development)                    | 5 years                                |
-| Can be hosted publicly       | Yes, but with scary warnings                   | Yes, clean                             |
-| Auto-update tools (Sparkle)  | Works, but re-signing breaks updates           | Works cleanly                          |
+### Installing a release (for the people you share it with)
 
-For sharing with a handful of friends, the free path is fine. For public download links or wider distribution, see `scripts/release.sh` for the paid notarized-DMG pipeline.
+1. Open the DMG and drag **Baplet** to **Applications**.
+2. Start Baplet. macOS blocks it the first time, because these builds are not notarized yet.
+3. Open **System Settings → Privacy & Security**, scroll down, click **Open Anyway** next to Baplet and confirm. As an alternative, run once:
+   ```sh
+   xattr -dr com.apple.quarantine /Applications/Baplet.app
+   ```
+4. Allow calendar access when Baplet asks.
+
+They need to do this again for each new version they download.
+
+### Current limitations and the paid path
+
+Release builds are currently ad-hoc signed, because no Apple Developer Program membership is needed. That means:
+
+|                                    | Now (ad-hoc signed)                         | After enrolling ($99/yr, Developer ID + notarization) |
+| ---------------------------------- | ------------------------------------------- | ----------------------------------------------------- |
+| First launch of each new version   | "Open Anyway" in Privacy & Security         | Just double-click                                     |
+| Calendar permission after updates  | Asked again (the signature changes each build) | Kept                                               |
+| Downloads                          | Only for people with access to this private repo | Public, e.g. from baplet.konkord.io             |
+| Auto-updates (Sparkle)             | Not practical                               | Possible                                              |
+
+To move to the paid path, follow `docs/distribution.md`. After enrolling, only the signing step of `release.yml` changes (Developer ID + notarization, the steps `scripts/release.sh` already contains). Tagging and publishing stay the same.
 
 ## License
 

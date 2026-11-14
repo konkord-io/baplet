@@ -44,7 +44,7 @@ Alert views: `AlertPopupView` and every full-screen style take `AlertProps`; `Fu
 
 - The Xcode project uses a file-system-synchronized group: files added under `baplet/` join the target automatically, so `project.pbxproj` needs no edit.
 - Every function gets a `///` doc comment explaining what it does and why; code itself carries no inline comments.
-- Deployment target is macOS 26.3 (README's "macOS 15.0+" is stale).
+- Deployment target is macOS 26.3.
 - Bundle ID `io.konkord.baplet`, team `H2MCB54VDW`. Changing the bundle ID resets users' `UserDefaults` and calendar permission.
 - `design/` holds the untouched original artwork (logo SVG/PNG, menu bar PDF, alert image). The asset catalog has working copies (some downscaled). Keep every original and every image asset, even ones the code no longer references. When swapping an image, only change the references.
 - Adding a third-party dependency means adding its entry (name, license, URL, full license text) to `OpenSourcePackage.all` in `OpenSourcePackages.swift`. The About tab credits it from there and shows its "Open Source" section only when that list is non-empty.
