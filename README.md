@@ -89,7 +89,7 @@ Release builds are currently ad-hoc signed, because no Apple Developer Program m
 | ---------------------------------- | ------------------------------------------- | ----------------------------------------------------- |
 | First launch of each new version   | "Open Anyway" in Privacy & Security         | Just double-click                                     |
 | Calendar permission after updates  | Asked again (the signature changes each build) | Kept                                               |
-| Downloads                          | Only for people with access to this private repo | Public, e.g. from baplet.konkord.io             |
+| Downloads                          | Public GitHub Release, with a security warning on first launch | Public, clean (GitHub Releases or baplet.konkord.io) |
 | Auto-updates (Sparkle)             | Not practical                               | Possible                                              |
 
 To move to the paid path, follow `docs/distribution.md`. After enrolling, only the signing step of `release.yml` changes (Developer ID + notarization, the steps `scripts/release.sh` already contains). Tagging and publishing stay the same.
