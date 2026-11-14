@@ -99,6 +99,18 @@ final class CalendarService {
         events = store.events(matching: predicate).sorted { $0.startDate < $1.startDate }
     }
 
+    /// Returns up to `limit` timed and all-day events from now through the next `days` days in
+    /// the given calendars, without changing the published event list. Used by the welcome
+    /// guide's Test button to preview what the selected calendars contain.
+    func upcomingEvents(in calendarIDs: Set<String>, days: Int = 7, limit: Int = 5) -> [EKEvent] {
+        let selected = calendars.filter { calendarIDs.contains($0.calendarIdentifier) }
+        guard !selected.isEmpty else { return [] }
+        let now = Date()
+        let end = now.addingTimeInterval(TimeInterval(days) * 86_400)
+        let predicate = store.predicateForEvents(withStart: now, end: end, calendars: selected)
+        return Array(store.events(matching: predicate).sorted { $0.startDate < $1.startDate }.prefix(limit))
+    }
+
     /// Groups the current events by calendar day, returning tuples of (day start date, events).
     /// Days are labeled "Today", "Tomorrow", or a date string in the UI layer.
     func eventsByDay() -> [(day: Date, events: [EKEvent])] {

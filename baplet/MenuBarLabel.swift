@@ -37,8 +37,8 @@ struct MenuBarLabel: View {
 
     /// Runs once at launch: requests calendar access if needed, loads calendars and events,
     /// and starts the alarm timer so alarms fire without the menu ever being opened.
-    /// When access is granted but no calendars are selected (first run), it opens Settings
-    /// so the user can pick which calendars to watch.
+    /// When access is granted but no calendars are selected, it opens the welcome guide on a
+    /// fresh install, or Settings if the guide was already finished.
     private func startUp() async {
         if calendarService.authorizationStatus == .notDetermined {
             await calendarService.requestAccess()
@@ -50,21 +50,37 @@ struct MenuBarLabel: View {
         alarmManager.start(calendarService: calendarService, settingsStore: settingsStore)
 
         if settingsStore.enabledCalendarIDs.isEmpty {
-            openWindow.openSettings()
+            if settingsStore.onboardingCompleted {
+                openWindow.openSettings()
+            } else {
+                openWindow.openWelcome()
+            }
         }
     }
 }
 
 extension OpenWindowAction {
     /// Opens the Settings window and brings it to the front.
+    @MainActor
+    func openSettings() {
+        openInFront(id: "settings")
+    }
+
+    /// Opens the welcome guide window and brings it to the front.
+    @MainActor
+    func openWelcome() {
+        openInFront(id: "welcome")
+    }
+
+    /// Opens the window scene with the given id and brings it to the front.
     /// Baplet is an agent app (no Dock icon), so the app must be activated explicitly
     /// or the window would open behind whatever app currently has focus.
     @MainActor
-    func openSettings() {
-        callAsFunction(id: "settings")
+    private func openInFront(id: String) {
+        callAsFunction(id: id)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             NSApp.activate(ignoringOtherApps: true)
-            for window in NSApp.windows where window.identifier?.rawValue == "settings" || window.title == "Settings" {
+            for window in NSApp.windows where window.identifier?.rawValue == id {
                 window.makeKeyAndOrderFront(nil)
             }
         }
