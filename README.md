@@ -2,6 +2,10 @@
 
 A macOS menu bar app that keeps you on top of your calendar events with customizable alarm alerts.
 
+**[⬇ Download Baplet for macOS](https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg)** (macOS 26.3+, free) · [website](https://baplet.konkord.io) · [all releases](https://github.com/konkord-io/baplet/releases)
+
+> Baplet isn't signed by Apple yet, so macOS blocks it the first time you open it. After dragging it to Applications, open **System Settings → Privacy & Security** and click **Open Anyway** next to Baplet (or run `xattr -dr com.apple.quarantine /Applications/Baplet.app`). Each new version needs this again.
+
 ## Features
 
 - **Menu bar integration** — see upcoming events at a glance with a live countdown icon
