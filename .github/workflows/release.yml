@@ -29,15 +29,19 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           cat > notes.md <<'NOTES'
+          ## What's new
+
+          - _Describe the changes here before publishing. Baplet's update window shows these notes to users._
+
           ## Installing
 
-          1. Open the DMG and drag **Baplet** to **Applications**.
+          1. Open the DMG and drag **Baplet** to **Applications** (replace the old version if asked).
           2. Start Baplet. macOS blocks it the first time, because this build isn't notarized yet.
           3. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to Baplet, then confirm.
 
           Or run once in Terminal: `xattr -dr com.apple.quarantine /Applications/Baplet.app`
 
-          Repeat this for each new version you download.
+          You only need to do this when you download Baplet yourself. Updates installed with **Check for Updates** (Settings → About) skip it. macOS asks for calendar access again after each update.
           NOTES
           cp "build/Baplet-${version}.dmg" build/Baplet.dmg
           gh release create "$GITHUB_REF_NAME" "build/Baplet-${version}.dmg" build/Baplet.dmg \
