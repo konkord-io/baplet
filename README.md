@@ -76,4 +76,4 @@ For sharing with a handful of friends, the free path is fine. For public downloa
 
 ## License
 
-All rights reserved.
+Baplet is released under the [MIT License](LICENSE). © 2026 Jakob Vad Nielsen.

@@ -5,13 +5,12 @@
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //
 
-import AppKit
 import EventKit
 import SwiftUI
 
 /// A row view displaying a single calendar event with its title, time range,
 /// optional location, and a color indicator matching the event's calendar.
-/// Includes a context menu for toggling alarm notifications per event.
+/// Timed events get a checkbox that switches the alarm of this one occurrence on or off.
 struct CalendarEventRow: View {
     let event: EKEvent
 
@@ -26,28 +25,24 @@ struct CalendarEventRow: View {
     /// selection to the row under the mouse.
     var onHoverChange: ((Bool) -> Void)? = nil
 
+    /// Opacity of rows that are faded: events with their alarm switched off here, and events
+    /// that have already ended in the Today panel.
+    static let fadedOpacity = 0.45
+
     @Environment(SettingsStore.self) private var settingsStore
     @State private var isHovered = false
 
     var body: some View {
         HStack(spacing: 10) {
-            Circle()
-                .fill(Color(cgColor: event.calendar.cgColor))
-                .frame(width: 10, height: 10)
+            CalendarColorDot(calendar: event.calendar)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(event.title ?? "No Title")
+                Text(event.displayTitle)
                     .font(.headline)
 
-                if event.isAllDay {
-                    Text("All Day")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(timeRange)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+                Text(event.isAllDay ? "All Day" : event.timeRangeText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
                 if let location = event.location, !location.isEmpty {
                     Text(location)
@@ -55,7 +50,7 @@ struct CalendarEventRow: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-            .opacity(isDimmed ? 0.45 : 1)
+            .opacity(isDimmed ? Self.fadedOpacity : 1)
             .animation(.easeOut(duration: 0.15), value: isDimmed)
 
             Spacer()
@@ -73,7 +68,7 @@ struct CalendarEventRow: View {
                 .help("Join \(meetingLink.serviceName)")
             }
 
-            if !event.isAllDay {
+            if let alarmEnabled {
                 Toggle("Alarm", isOn: alarmEnabled)
                     .toggleStyle(MonoCheckboxToggleStyle())
                     .help(alarmEnabled.wrappedValue ? "Disable alarm" : "Enable alarm")
@@ -83,19 +78,15 @@ struct CalendarEventRow: View {
         .padding(.horizontal, 12)
         .background(rowBackground)
         .contentShape(Rectangle())
+        .pointerStyle(.link)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
             }
             onHoverChange?(hovering)
-            if hovering {
-                NSCursor.pointingHand.push()
-            } else {
-                NSCursor.pop()
-            }
         }
         .onTapGesture {
-            openInCalendar()
+            AlertService.openEventInCalendar(event)
             onOpened?()
         }
     }
@@ -106,41 +97,37 @@ struct CalendarEventRow: View {
         return isHovered ? Color.primary.opacity(0.1) : .clear
     }
 
-    /// Two-way binding for the row's alarm switch, backed by the per-event setting in
+    /// Two-way binding for the row's alarm checkbox, backed by this occurrence's setting in
     /// `SettingsStore` (which persists it and is what `AlarmManager` checks before firing).
-    private var alarmEnabled: Binding<Bool> {
-        Binding(
-            get: { settingsStore.isAlarmEnabled(eventID: event.eventIdentifier) },
+    /// Nil for all-day events and events without an alarm key, which get no checkbox.
+    private var alarmEnabled: Binding<Bool>? {
+        guard !event.isAllDay, let key = event.alarmKey else { return nil }
+        return Binding(
+            get: { settingsStore.isAlarmEnabled(key: key) },
             set: { newValue in
-                if newValue != settingsStore.isAlarmEnabled(eventID: event.eventIdentifier) {
-                    settingsStore.toggleEventAlarm(eventID: event.eventIdentifier)
+                if newValue != settingsStore.isAlarmEnabled(key: key) {
+                    settingsStore.toggleEventAlarm(key: key)
                 }
             }
         )
     }
 
-    /// True when this timed event's alarm is unchecked, so its text is shown faded.
-    /// All-day events have no alarm control and are never dimmed.
+    /// True when this event's alarm checkbox is unchecked, so its text is shown faded.
+    /// Rows without a checkbox are never dimmed.
     private var isDimmed: Bool {
-        !event.isAllDay && !alarmEnabled.wrappedValue
+        alarmEnabled.map { !$0.wrappedValue } ?? false
     }
+}
 
-    /// Opens this event in Apple Calendar via a temporary .ics file.
-    private func openInCalendar() {
-        AlertService.openEventInCalendar(
-            title: event.title ?? "No Title",
-            startDate: event.startDate,
-            endDate: event.endDate,
-            uid: event.calendarItemExternalIdentifier
-        )
-    }
+/// The small filled circle in a calendar's colour, shown next to calendars and events.
+struct CalendarColorDot: View {
+    let calendar: EKCalendar?
+    var size: CGFloat = 10
 
-    /// Formats the event's start and end time into a readable range string.
-    private var timeRange: String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        formatter.dateStyle = .none
-        return "\(formatter.string(from: event.startDate)) \u{2013} \(formatter.string(from: event.endDate))"
+    var body: some View {
+        Circle()
+            .fill(calendar.map { Color(cgColor: $0.cgColor) } ?? Color.secondary)
+            .frame(width: size, height: size)
     }
 }
 

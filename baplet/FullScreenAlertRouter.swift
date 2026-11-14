@@ -11,7 +11,7 @@ import SwiftUI
 /// Used by AlertService to display the correct style in the full-screen panel.
 struct FullScreenAlertRouter: View {
     let style: AlertStyle
-    let props: FullScreenAlertProps
+    let props: AlertProps
 
     var body: some View {
         switch style {

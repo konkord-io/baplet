@@ -26,13 +26,12 @@ enum TodayShortcutHelp {
 ///
 /// Keyboard: ↑/↓ move the selection (starting on the current or next meeting), Return runs the
 /// action chosen in Settings → Shortcuts, ⌘Return the other one, D toggles the alarm.
-@MainActor
 enum TodayPanel {
     /// The panel while it is on screen.
     private static var panel: TodayPanelWindow?
 
-    /// Local key-down monitor for the panel's keys; removed when the panel closes.
-    private static var keyMonitor: Any?
+    /// Key-down monitor for the panel's keys; stopped when the panel closes.
+    private static let keyMonitor = PanelKeyMonitor()
 
     /// Shows the panel, or closes it if it is already showing (so one shortcut does both).
     static func toggle(calendarService: CalendarService, settingsStore: SettingsStore) {
@@ -82,15 +81,12 @@ enum TodayPanel {
         panel.makeKeyAndOrderFront(nil)
 
         self.panel = panel
-        installKeyHandling(model: model, settingsStore: settingsStore)
+        installKeyHandling(for: panel, model: model, settingsStore: settingsStore)
     }
 
     /// Closes the panel if it is showing and stops listening for its keys.
     static func close() {
-        if let keyMonitor {
-            NSEvent.removeMonitor(keyMonitor)
-        }
-        keyMonitor = nil
+        keyMonitor.stop()
         guard let panel else { return }
         self.panel = nil
         panel.onDismiss = nil
@@ -100,19 +96,18 @@ enum TodayPanel {
     /// Handles the panel's keys before the list sees them (so arrows never just scroll):
     /// ↑/↓ select, Return / ⌘Return open, D toggles the alarm. Other keys pass through, and
     /// Escape reaches the panel's `cancelOperation`.
-    private static func installKeyHandling(model: TodayListModel, settingsStore: SettingsStore) {
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            guard event.window === panel else { return event }
+    private static func installKeyHandling(for panel: TodayPanelWindow, model: TodayListModel, settingsStore: SettingsStore) {
+        keyMonitor.start(for: panel) { event in
             let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
 
             switch event.keyCode {
-            case 125:
+            case KeyCode.downArrow:
                 model.move(by: 1)
                 return nil
-            case 126:
+            case KeyCode.upArrow:
                 model.move(by: -1)
                 return nil
-            case 36, 76:
+            case KeyCode.returnKey, KeyCode.keypadEnter:
                 guard let selected = model.selectedEvent else { return nil }
                 let action = modifiers == .command
                     ? settingsStore.todayReturnAction.alternate
@@ -124,8 +119,8 @@ enum TodayPanel {
             }
 
             if modifiers.isEmpty, event.charactersIgnoringModifiers?.lowercased() == "d" {
-                if let selected = model.selectedEvent, !selected.isAllDay {
-                    settingsStore.toggleEventAlarm(eventID: selected.eventIdentifier)
+                if let selected = model.selectedEvent, !selected.isAllDay, let key = selected.alarmKey {
+                    settingsStore.toggleEventAlarm(key: key)
                 }
                 return nil
             }
@@ -139,12 +134,7 @@ enum TodayPanel {
         if action == .joinMeeting, let link = AlertService.extractMeetingLink(from: event) {
             BrowserService.openMeeting(link.url, settings: settingsStore)
         } else {
-            AlertService.openEventInCalendar(
-                title: event.title ?? "No Title",
-                startDate: event.startDate,
-                endDate: event.endDate,
-                uid: event.calendarItemExternalIdentifier
-            )
+            AlertService.openEventInCalendar(event)
         }
         close()
     }
@@ -152,10 +142,12 @@ enum TodayPanel {
 
 /// The Today list's events and which one is selected. Shared by the view (highlight, scroll)
 /// and the panel's key handling (arrows, Return, D).
-@MainActor
 @Observable
 final class TodayListModel {
+    /// Today's events in display order, captured when the panel opened.
     let events: [EKEvent]
+
+    /// Index into `events` of the highlighted row, or nil when the list is empty.
     var selectedIndex: Int?
 
     /// Where the mouse pointer was when the selection last followed it. Rows only take the
@@ -164,10 +156,10 @@ final class TodayListModel {
     private var lastPointerLocation = NSEvent.mouseLocation
 
     /// Starts with the meeting happening now, or the next one; all-day events are skipped.
-    /// When every meeting has ended, the last one is selected.
-    init(events: [EKEvent]) {
+    /// When every meeting has ended, the last one is selected. `now` defaults to the current
+    /// time; tests pass a fixed one.
+    init(events: [EKEvent], now: Date = Date()) {
         self.events = events
-        let now = Date()
         let timed = events.indices.filter { !events[$0].isAllDay }
         self.selectedIndex = timed.first { events[$0].endDate > now } ?? timed.last ?? events.indices.first
     }
@@ -196,8 +188,11 @@ final class TodayListModel {
 /// Panel that can take keyboard focus without activating Baplet, and reports when it should
 /// go away: Escape pressed, or focus moved to another window or app.
 private final class TodayPanelWindow: NSPanel {
+    /// Called when the panel should close (Escape or lost focus); cleared before Baplet
+    /// closes the panel itself so it doesn't fire twice.
     var onDismiss: (() -> Void)?
 
+    /// Lets the non-activating panel take key focus so it receives the list's keys.
     override var canBecomeKey: Bool { true }
 
     /// Escape closes the panel.
@@ -271,7 +266,7 @@ private struct TodayView: View {
                                 if hovering { model.pointerEntered(row: index) }
                             }
                         )
-                        .opacity(event.endDate < .now ? 0.45 : 1)
+                        .opacity(event.endDate < .now ? CalendarEventRow.fadedOpacity : 1)
                         .id(index)
                     }
                 }

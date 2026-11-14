@@ -8,13 +8,18 @@
 import EventKit
 import SwiftUI
 
-/// Main popover content displayed when clicking the menu bar icon.
+/// Main window content displayed when clicking the menu bar icon.
 /// Shows upcoming events grouped by day, handles authorization states,
 /// and provides access to settings and quit.
 struct MenuBarContentView: View {
     @Environment(CalendarService.self) private var calendarService
     @Environment(SettingsStore.self) private var settingsStore
     @Environment(AlarmManager.self) private var alarmManager
+    @Environment(\.openWindow) private var openWindow
+
+    /// Bumped on every refresh click; the refresh icon spins one turn each time it changes,
+    /// giving visible feedback for a reload that otherwise completes instantly.
+    @State private var refreshCount = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,13 +30,8 @@ struct MenuBarContentView: View {
         .frame(width: 360)
     }
 
-    @Environment(\.openWindow) private var openWindow
-
-    /// Bumped on every refresh click; the refresh icon spins one turn each time it changes,
-    /// giving visible feedback for a reload that otherwise completes instantly.
-    @State private var refreshCount = 0
-
-    /// Header bar displaying the app name with refresh, settings, and quit buttons.
+    /// Header bar with the app name and the refresh, Today, pause/resume, settings and quit
+    /// buttons.
     private var header: some View {
         HStack(spacing: 4) {
             Text("Baplet")
@@ -39,7 +39,7 @@ struct MenuBarContentView: View {
             Spacer()
             Button {
                 refreshCount += 1
-                calendarService.refresh(enabledCalendarIDs: settingsStore.enabledCalendarIDs, daysToShow: settingsStore.daysToShow)
+                calendarService.refresh(for: settingsStore)
             } label: {
                 Image(systemName: "arrow.clockwise")
                     .symbolEffect(.rotate, value: refreshCount)
@@ -144,7 +144,7 @@ struct MenuBarContentView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(dayGroups, id: \.day) { group in
                             Section {
-                                ForEach(group.events, id: \.eventIdentifier) { event in
+                                ForEach(group.events, id: \.alarmKey) { event in
                                     CalendarEventRow(event: event)
                                 }
                             } header: {
@@ -173,10 +173,7 @@ struct MenuBarContentView: View {
         } else if calendar.isDateInTomorrow(date) {
             return "Tomorrow"
         } else {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .none
-            return formatter.string(from: date)
+            return date.formatted(date: .abbreviated, time: .omitted)
         }
     }
 

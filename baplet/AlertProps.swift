@@ -1,5 +1,5 @@
 //
-//  FullScreenAlertProps.swift
+//  AlertProps.swift
 //  baplet
 //
 //  Created by Jakob Vad Nielsen on 20/05/2026.
@@ -7,9 +7,9 @@
 
 import Foundation
 
-/// Shared data passed to all full-screen alert style views.
-/// Contains event details, action callbacks, and snooze configuration.
-struct FullScreenAlertProps {
+/// Everything an alert view shows and can do, shared by the popup dialog and every
+/// full-screen style: event details plus the dismiss, snooze and open actions.
+struct AlertProps {
     let title: String
     let time: String
     let location: String?
@@ -20,8 +20,12 @@ struct FullScreenAlertProps {
     let onOpenMeeting: () -> Void
     let onOpenInCalendar: () -> Void
 
-    /// Available snooze durations in minutes offered in the dropdown.
-    let snoozeDurations: [Int] = [1, 3, 5, 10, 15, 20, 30]
+    /// Snooze durations in minutes offered in every alert's snooze dropdown.
+    static let snoozeDurations = [1, 3, 5, 10, 15, 20, 30]
+
+    /// Snooze length used by the Snooze button itself, the S key, and an alert that is closed
+    /// or replaced without the user picking an action.
+    static let defaultSnoozeMinutes = 5
 
     /// Primary action of the Open button: joins the meeting when the event has a link,
     /// otherwise opens the event in Calendar. Either way the alarm stops.

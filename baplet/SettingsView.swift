@@ -78,67 +78,70 @@ private struct CalendarsPane: View {
 
     var body: some View {
         Group {
-        if calendarService.sources.isEmpty {
-            ContentUnavailableView {
-                Label("No Calendars", systemImage: "calendar")
-            } description: {
-                Text("No calendar sources found. Grant calendar access first.")
-            }
-        } else {
-            Form {
-                Section {
-                    SettingsHelpText("Choose which calendars Baplet watches. Events from the selected calendars appear in the menu and can trigger alerts. The list comes from the accounts in the macOS Calendar app (iCloud, Google, Exchange and others). To add one, go to System Settings → [Internet Accounts](x-apple.systempreferences:com.apple.Internet-Accounts-Settings.extension).")
+            if calendarService.sources.isEmpty {
+                ContentUnavailableView {
+                    Label("No Calendars", systemImage: "calendar")
+                } description: {
+                    Text("No calendar sources found. Grant calendar access first.")
                 }
+            } else {
+                Form {
+                    Section {
+                        SettingsHelpText("Choose which calendars Baplet watches. Events from the selected calendars appear in the menu and can trigger alerts. The list comes from the accounts in the macOS Calendar app (iCloud, Google, Exchange and others). To add one, go to System Settings → [Internet Accounts](x-apple.systempreferences:com.apple.Internet-Accounts-Settings.extension).")
+                    }
 
-                ForEach(calendarService.sources, id: \.sourceIdentifier) { source in
-                    let sourceCalendars = calendarService.calendars(for: source)
-                    if !sourceCalendars.isEmpty {
-                        Section(source.title) {
-                            ForEach(sourceCalendars, id: \.calendarIdentifier) { calendar in
-                                Toggle(isOn: Binding(
-                                    get: { settingsStore.isCalendarEnabled(calendarID: calendar.calendarIdentifier) },
-                                    set: { _ in
-                                        settingsStore.toggleCalendar(calendarID: calendar.calendarIdentifier)
-                                        calendarService.fetchEvents(enabledCalendarIDs: settingsStore.enabledCalendarIDs, daysToShow: settingsStore.daysToShow)
-                                    }
-                                )) {
-                                    HStack(spacing: 8) {
-                                        Circle()
-                                            .fill(Color(cgColor: calendar.cgColor))
-                                            .frame(width: 10, height: 10)
-                                        Text(calendar.title)
-                                    }
+                    ForEach(calendarService.sources, id: \.sourceIdentifier) { source in
+                        let sourceCalendars = calendarService.calendars(for: source)
+                        if !sourceCalendars.isEmpty {
+                            Section(source.title) {
+                                ForEach(sourceCalendars, id: \.calendarIdentifier) { calendar in
+                                    CalendarToggle(calendar: calendar)
                                 }
                             }
                         }
                     }
-                }
 
-                Section {
-                    HStack {
-                        Spacer()
-                        Button("Select All") { selectAll() }
-                        Button("Deselect All") { deselectAll() }
+                    Section {
+                        HStack {
+                            Spacer()
+                            Button("Select All") {
+                                settingsStore.enabledCalendarIDs = calendarService.allCalendarIDs
+                            }
+                            Button("Deselect All") {
+                                settingsStore.enabledCalendarIDs = []
+                            }
+                        }
                     }
                 }
+                .formStyle(.grouped)
             }
-            .formStyle(.grouped)
-        }
         }
         .navigationTitle("Calendars")
     }
+}
 
-    /// Enables all calendars and refreshes the event list.
-    private func selectAll() {
-        let allIDs = calendarService.calendars.map(\.calendarIdentifier)
-        settingsStore.enabledCalendarIDs = Set(allIDs)
-        calendarService.fetchEvents(enabledCalendarIDs: settingsStore.enabledCalendarIDs, daysToShow: settingsStore.daysToShow)
+/// Checkbox that includes or excludes one calendar, labelled with its colour and title.
+/// Shared by Settings → Calendars and the welcome guide; `MenuBarLabel` re-fetches events
+/// whenever the selection changes.
+struct CalendarToggle: View {
+    @Environment(SettingsStore.self) private var settingsStore
+    let calendar: EKCalendar
+
+    var body: some View {
+        Toggle(isOn: isEnabled) {
+            HStack(spacing: 8) {
+                CalendarColorDot(calendar: calendar)
+                Text(calendar.title)
+            }
+        }
     }
 
-    /// Disables all calendars and refreshes the event list.
-    private func deselectAll() {
-        settingsStore.enabledCalendarIDs = []
-        calendarService.fetchEvents(enabledCalendarIDs: settingsStore.enabledCalendarIDs, daysToShow: settingsStore.daysToShow)
+    /// Two-way binding to whether this calendar is in `SettingsStore.enabledCalendarIDs`.
+    private var isEnabled: Binding<Bool> {
+        Binding(
+            get: { settingsStore.isCalendarEnabled(calendarID: calendar.calendarIdentifier) },
+            set: { _ in settingsStore.toggleCalendar(calendarID: calendar.calendarIdentifier) }
+        )
     }
 }
 
@@ -245,7 +248,7 @@ private struct MeetingsPane: View {
 
     /// Re-reads the profile list for the selected browser (empty when it has none).
     private func loadProfiles() {
-        profiles = selectedBrowser.map(BrowserService.profiles(for:)) ?? []
+        profiles = selectedBrowser.map { BrowserService.profiles(for: $0) } ?? []
     }
 
     /// The browser's app icon scaled to menu size, so the picker rows stay compact.
@@ -288,7 +291,8 @@ private struct ShortcutsPane: View {
     }
 }
 
-/// Pane with the app logo, name, version, creator and copyright, plus credits for any
+/// Pane with the app logo, name, version, creator, copyright, Baplet's own MIT licence and
+/// GitHub link, plus credits for any
 /// bundled open-source packages (that section is hidden while there are none).
 private struct AboutPane: View {
     @Environment(\.openWindow) private var openWindow
@@ -314,6 +318,15 @@ private struct AboutPane: View {
                     Text(Self.infoValue("NSHumanReadableCopyright"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text("Licensed under the \(OpenSourcePackage.baplet.license) License")
+                        Button("View License") { licenseShown = .baplet }
+                            .buttonStyle(.link)
+                        Text("·")
+                        Link("GitHub", destination: OpenSourcePackage.baplet.url)
+                    }
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
                     Button("Show Welcome Guide") {
                         openWindow.openWelcome()
                     }

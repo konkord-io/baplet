@@ -5,13 +5,12 @@
 //  Created by Jakob Vad Nielsen on 20/05/2026.
 //
 
-import AppKit
 import SwiftUI
 
 /// Full-screen alert with a frosted glass card centered on a dark backdrop.
 /// Features gradient accent buttons, soft shadows, and a spring entrance animation.
 struct GlassmorphicAlertView: View {
-    let props: FullScreenAlertProps
+    let props: AlertProps
 
     @State private var appeared = false
 
@@ -69,11 +68,11 @@ struct GlassmorphicAlertView: View {
         }
     }
 
-    /// Snooze split button: click snoozes for 5 min, dropdown arrow shows all durations.
+    /// Snooze split button: click snoozes for the default time, dropdown arrow shows all durations.
     private var snoozeButton: some View {
         HStack(spacing: 0) {
-            Button { props.onSnooze(5) } label: {
-                Text("Snooze 5m")
+            Button { props.onSnooze(AlertProps.defaultSnoozeMinutes) } label: {
+                Text("Snooze \(AlertProps.defaultSnoozeMinutes)m")
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 20)
@@ -87,7 +86,7 @@ struct GlassmorphicAlertView: View {
                 .frame(width: 1, height: 20)
 
             Menu {
-                ForEach(props.snoozeDurations, id: \.self) { minutes in
+                ForEach(AlertProps.snoozeDurations, id: \.self) { minutes in
                     Button("\(minutes) min") { props.onSnooze(minutes) }
                 }
             } label: {
