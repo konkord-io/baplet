@@ -143,6 +143,17 @@ final class SettingsStore {
         didSet { defaults.set(onboardingCompleted, forKey: Keys.onboardingCompleted) }
     }
 
+    /// Whether Baplet checks GitHub for a new version once a day on its own.
+    var checkForUpdatesAutomatically: Bool {
+        didSet { defaults.set(checkForUpdatesAutomatically, forKey: Keys.checkForUpdatesAutomatically) }
+    }
+
+    /// When the last successful update check finished; nil before the first one.
+    /// The automatic check waits until this is more than a day old.
+    var lastUpdateCheck: Date? {
+        didSet { defaults.set(lastUpdateCheck, forKey: Keys.lastUpdateCheck) }
+    }
+
     private let defaults: UserDefaults
 
     private enum Keys {
@@ -163,6 +174,8 @@ final class SettingsStore {
         static let meetingBrowserProfileID = "meetingBrowserProfileID"
         static let onboardingCompleted = "onboardingCompleted"
         static let todayReturnAction = "todayReturnAction"
+        static let checkForUpdatesAutomatically = "checkForUpdatesAutomatically"
+        static let lastUpdateCheck = "lastUpdateCheck"
         /// Set once settings have been copied out of the old sandbox container.
         static let migratedFromSandboxContainer = "migratedFromSandboxContainer"
     }
@@ -207,6 +220,8 @@ final class SettingsStore {
         self.onboardingCompleted = defaults.bool(forKey: Keys.onboardingCompleted)
         self.todayReturnAction = defaults.string(forKey: Keys.todayReturnAction)
             .flatMap(TodayReturnAction.init(rawValue:)) ?? .joinMeeting
+        self.checkForUpdatesAutomatically = defaults.object(forKey: Keys.checkForUpdatesAutomatically) as? Bool ?? true
+        self.lastUpdateCheck = defaults.object(forKey: Keys.lastUpdateCheck) as? Date
     }
 
     /// Copies settings saved while Baplet was sandboxed (before profile support needed the
