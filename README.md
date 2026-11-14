@@ -38,6 +38,16 @@ Or in Xcode:
 
 On first launch the app will request calendar access. Grant full access for all features to work.
 
+## Releases
+
+Every PR and push to `main` is built and tested by GitHub Actions. To make a release, push a version tag:
+
+```sh
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+CI builds an ad-hoc signed `Baplet-1.0.0.dmg` and creates a **draft** GitHub Release with install notes. Check it, then click Publish. Until Baplet is notarized (see `docs/distribution.md`), people who download it have to allow it once under System Settings → Privacy & Security → Open Anyway. `make dmg VERSION=1.0.0` builds the same DMG locally.
+
 ## Sharing the app with friends (no Apple Developer Program needed)
 
 You can share the built app for free without paying the $99/yr Apple Developer Program fee. Your friends just have to bypass Gatekeeper once on first launch.
