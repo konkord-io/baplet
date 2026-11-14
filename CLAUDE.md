@@ -22,7 +22,7 @@ Three `@Observable` singletons are created in `BapletApp.swift` and injected wit
 
 Startup (access request, event load, `AlarmManager.start`, opening Settings when no calendars are selected) lives in `MenuBarLabel`'s `.task`: the label renders at launch, while the `MenuBarExtra` window content is built lazily on first click.
 
-`AlertService` is a stateless enum that does the AppKit work SwiftUI can't: `NSPanel` alerts (floating popup, or borderless `.screenSaver`-level full screen), sound, meeting-link extraction, opening events in Calendar.
+`AlertService` is a stateless enum that does the AppKit work SwiftUI can't: `NSPanel` alerts (floating popup, or borderless full screen), sound, meeting-link extraction, opening events in Calendar, and the O/D/S/Return keyboard shortcuts. The full-screen panel sits at `.popUpMenu - 1`: any higher and SwiftUI `Menu` dropdowns open behind it.
 
 Full-screen alert styles: `FullScreenAlertRouter` picks the view for the chosen `AlertStyle`, each view takes `FullScreenAlertProps`. A new style = new `AlertStyle` case + view + router branch.
 

@@ -26,12 +26,6 @@ struct BoldMinimalAlertView: View {
                 .padding(60)
 
             VStack(spacing: 28) {
-                Text("UPCOMING EVENT")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.white.opacity(0.5))
-                    .tracking(4)
-
                 VStack(spacing: 14) {
                     Text(props.title)
                         .font(.system(size: 52, weight: .heavy))
@@ -58,6 +52,7 @@ struct BoldMinimalAlertView: View {
                 HStack(spacing: 20) {
                     snoozeButton
                     dismissButton
+                    openButton
                 }
                 .padding(.top, 12)
             }
@@ -114,11 +109,29 @@ struct BoldMinimalAlertView: View {
         .clipShape(Capsule())
     }
 
-    /// Dismiss split button: click dismisses, dropdown arrow shows join-meeting and open-in-Calendar.
+    /// Dismiss button: turns off the alarm for this event.
     private var dismissButton: some View {
+        Button { props.onDismiss() } label: {
+            Text("Dismiss")
+                .font(.body)
+                .fontWeight(.semibold)
+                .foregroundStyle(.white.opacity(0.8))
+                .padding(.horizontal, 24)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .background(.white.opacity(0.1))
+        .clipShape(Capsule())
+    }
+
+    /// Open split button: a click joins the meeting (or opens Calendar when there is no link);
+    /// with a meeting link, the dropdown offers "Open meeting" and "Open calendar".
+    /// Opening in any way stops the alarm.
+    private var openButton: some View {
         HStack(spacing: 0) {
-            Button { props.onDismiss() } label: {
-                Text("Dismiss")
+            Button { props.openDefault() } label: {
+                Text("Open")
                     .font(.body)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white.opacity(0.8))
@@ -128,34 +141,32 @@ struct BoldMinimalAlertView: View {
             }
             .buttonStyle(.plain)
 
-            Rectangle()
-                .fill(.white.opacity(0.3))
-                .frame(width: 1, height: 24)
+            if let meetingLink = props.meetingLink {
+                Rectangle()
+                    .fill(.white.opacity(0.3))
+                    .frame(width: 1, height: 24)
 
-            Menu {
-                if let meetingLink = props.meetingLink {
+                Menu {
                     Button {
-                        props.onDismiss()
-                        NSWorkspace.shared.open(meetingLink.url)
+                        props.onOpenMeeting()
                     } label: {
-                        Label("Dismiss and join \(meetingLink.serviceName)", systemImage: meetingLink.icon)
+                        Label("Open meeting", systemImage: meetingLink.icon)
                     }
-                }
-
-                Button {
-                    props.onOpenInCalendar()
+                    Button {
+                        props.onOpenInCalendar()
+                    } label: {
+                        Label("Open calendar", systemImage: "calendar")
+                    }
                 } label: {
-                    Label("Dismiss and open in Calendar", systemImage: "calendar")
+                    Image(systemName: "chevron.down")
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.8))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
                 }
-            } label: {
-                Image(systemName: "chevron.down")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.8))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 14)
-                    .contentShape(Rectangle())
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .background(.white.opacity(0.1))
         .clipShape(Capsule())

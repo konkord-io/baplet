@@ -15,6 +15,13 @@ enum AlertService {
     /// Strong reference to the currently displayed alert panel, if any.
     private static var activePanel: NSPanel?
 
+    /// Local key-down monitor for the active alert's shortcuts; removed when the panel closes.
+    private static var keyMonitor: Any?
+
+    /// How long after an alert appears before its single-letter shortcuts respond, so keys
+    /// already being typed into another app don't trigger an action by accident.
+    private static let shortcutArmDelay: TimeInterval = 1.0
+
     /// A detected meeting link with its service name, icon, and URL.
     struct MeetingLink {
         let serviceName: String
@@ -103,7 +110,7 @@ enum AlertService {
         }
     }
 
-    /// Shows a floating popup dialog panel with event details and dismiss/snooze actions.
+    /// Shows a floating popup dialog panel with event details and snooze/dismiss/open actions.
     /// Creates an NSPanel with .titled and .closable style, floating above other windows.
     static func showPopupAlert(
         title: String,
@@ -117,7 +124,7 @@ enum AlertService {
     ) {
         closeActivePanel()
 
-        let panel = NSPanel(
+        let panel = AlertPanel(
             contentRect: NSRect(x: 0, y: 0, width: 320, height: 300),
             styleMask: [.titled, .closable, .nonactivatingPanel],
             backing: .buffered,
@@ -129,25 +136,22 @@ enum AlertService {
         panel.isReleasedWhenClosed = false
         panel.center()
 
+        let actions = PanelActions(
+            meetingLink: meetingLink,
+            onDismiss: onDismiss,
+            onSnooze: onSnooze,
+            onOpenInCalendar: onOpenInCalendar
+        )
         let rootView = AlertPopupView(
             title: title,
             time: time,
             location: location,
             calendarName: calendarName,
             meetingLink: meetingLink,
-            onDismiss: {
-                closeActivePanel()
-                onDismiss()
-            },
-            onSnooze: { minutes in
-                closeActivePanel()
-                onSnooze(minutes)
-            },
-            onOpenInCalendar: {
-                closeActivePanel()
-                onDismiss()
-                onOpenInCalendar()
-            }
+            onDismiss: actions.dismiss,
+            onSnooze: actions.snooze,
+            onOpenMeeting: actions.openMeeting,
+            onOpenInCalendar: actions.openInCalendar
         )
         let hostingView = NSHostingView(rootView: rootView)
         hostingView.sizingOptions = []
@@ -158,11 +162,14 @@ enum AlertService {
         panel.makeKeyAndOrderFront(nil)
 
         activePanel = panel
+        installKeyShortcuts(actions)
     }
 
     /// Shows a full-screen overlay panel styled according to the given AlertStyle.
-    /// Creates a borderless NSPanel at screenSaver level covering the entire screen
-    /// and hosts a FullScreenAlertRouter that picks the correct visual style.
+    /// Creates a borderless NSPanel covering the entire screen and hosts a
+    /// FullScreenAlertRouter that picks the correct visual style. The panel sits one level
+    /// below pop-up menus: high enough to cover the Dock, menu bar and other windows, yet low
+    /// enough that the Snooze and Open dropdown menus appear on top of it.
     static func showFullScreenAlert(
         style: AlertStyle,
         title: String,
@@ -178,37 +185,34 @@ enum AlertService {
 
         guard let screen = NSScreen.main else { return }
 
-        let panel = NSPanel(
+        let panel = AlertPanel(
             contentRect: screen.frame,
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
-        panel.level = .screenSaver
+        panel.level = NSWindow.Level(rawValue: NSWindow.Level.popUpMenu.rawValue - 1)
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
         panel.isOpaque = false
         panel.backgroundColor = NSColor.black.withAlphaComponent(0.85)
 
+        let actions = PanelActions(
+            meetingLink: meetingLink,
+            onDismiss: onDismiss,
+            onSnooze: onSnooze,
+            onOpenInCalendar: onOpenInCalendar
+        )
         let props = FullScreenAlertProps(
             title: title,
             time: time,
             location: location,
             calendarName: calendarName,
             meetingLink: meetingLink,
-            onDismiss: {
-                closeActivePanel()
-                onDismiss()
-            },
-            onSnooze: { minutes in
-                closeActivePanel()
-                onSnooze(minutes)
-            },
-            onOpenInCalendar: {
-                closeActivePanel()
-                onDismiss()
-                onOpenInCalendar()
-            }
+            onDismiss: actions.dismiss,
+            onSnooze: actions.snooze,
+            onOpenMeeting: actions.openMeeting,
+            onOpenInCalendar: actions.openInCalendar
         )
 
         let hostingView = NSHostingView(rootView: FullScreenAlertRouter(
@@ -220,11 +224,94 @@ enum AlertService {
         panel.makeKeyAndOrderFront(nil)
 
         activePanel = panel
+        installKeyShortcuts(actions)
     }
 
-    /// Closes and releases the currently active alert panel, if one exists.
+    /// Closes and releases the currently active alert panel, if one exists,
+    /// and removes its keyboard shortcut monitor.
     static func closeActivePanel() {
+        if let keyMonitor {
+            NSEvent.removeMonitor(keyMonitor)
+        }
+        keyMonitor = nil
         activePanel?.close()
         activePanel = nil
     }
+
+    /// Listens for the alert's keyboard shortcuts while its panel is key:
+    /// O or Return opens (meeting if there is a link, otherwise Calendar), D dismisses and
+    /// S snoozes for 5 minutes. Keys pressed within `shortcutArmDelay` of the alert appearing
+    /// are swallowed and ignored; any other key passes through untouched.
+    private static func installKeyShortcuts(_ actions: PanelActions) {
+        let armedAt = Date().addingTimeInterval(shortcutArmDelay)
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard event.window === activePanel,
+                  event.modifierFlags.isDisjoint(with: [.command, .control, .option]) else {
+                return event
+            }
+            let isReturn = event.keyCode == 36 || event.keyCode == 76
+            let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
+            guard isReturn || ["o", "d", "s"].contains(key) else { return event }
+            guard Date() >= armedAt else { return nil }
+
+            if isReturn || key == "o" {
+                actions.openDefault()
+            } else if key == "d" {
+                actions.dismiss()
+            } else {
+                actions.snooze(5)
+            }
+            return nil
+        }
+    }
+
+    /// The four alert actions, each wrapped to close the panel first. Opening in any way
+    /// also dismisses, so the alarm stops once the user has gone to the meeting or event.
+    private struct PanelActions {
+        let dismiss: () -> Void
+        let snooze: (Int) -> Void
+        let openMeeting: () -> Void
+        let openInCalendar: () -> Void
+        let openDefault: () -> Void
+
+        /// Builds the wrapped actions from the caller's dismiss/snooze/Calendar callbacks
+        /// and the event's meeting link, if any.
+        init(
+            meetingLink: MeetingLink?,
+            onDismiss: @escaping () -> Void,
+            onSnooze: @escaping (Int) -> Void,
+            onOpenInCalendar: @escaping () -> Void
+        ) {
+            let openMeeting = {
+                closeActivePanel()
+                onDismiss()
+                if let meetingLink {
+                    NSWorkspace.shared.open(meetingLink.url)
+                }
+            }
+            let openInCalendar = {
+                closeActivePanel()
+                onDismiss()
+                onOpenInCalendar()
+            }
+            self.dismiss = {
+                closeActivePanel()
+                onDismiss()
+            }
+            self.snooze = { minutes in
+                closeActivePanel()
+                onSnooze(minutes)
+            }
+            self.openMeeting = openMeeting
+            self.openInCalendar = openInCalendar
+            self.openDefault = meetingLink != nil ? openMeeting : openInCalendar
+        }
+    }
+}
+
+/// Alert panel that can become the key window even when borderless, so the full-screen
+/// styles receive keyboard shortcuts. As a non-activating panel it takes key focus without
+/// activating Baplet or pulling the user out of their current app.
+private final class AlertPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
 }
