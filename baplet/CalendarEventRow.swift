@@ -19,6 +19,13 @@ struct CalendarEventRow: View {
     /// so a container such as the Today panel can close itself.
     var onOpened: (() -> Void)? = nil
 
+    /// Whether this row is the keyboard selection (Today panel); drawn with an accent highlight.
+    var isSelected = false
+
+    /// Called when the pointer enters or leaves the row, so the Today panel can move its
+    /// selection to the row under the mouse.
+    var onHoverChange: ((Bool) -> Void)? = nil
+
     @Environment(SettingsStore.self) private var settingsStore
     @State private var isHovered = false
 
@@ -74,12 +81,13 @@ struct CalendarEventRow: View {
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 12)
-        .background(isHovered ? Color.primary.opacity(0.1) : Color.clear)
+        .background(rowBackground)
         .contentShape(Rectangle())
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
             }
+            onHoverChange?(hovering)
             if hovering {
                 NSCursor.pointingHand.push()
             } else {
@@ -90,6 +98,12 @@ struct CalendarEventRow: View {
             openInCalendar()
             onOpened?()
         }
+    }
+
+    /// Accent highlight when selected, a light grey one under the pointer, otherwise none.
+    private var rowBackground: Color {
+        if isSelected { return Color.accentColor.opacity(0.25) }
+        return isHovered ? Color.primary.opacity(0.1) : .clear
     }
 
     /// Two-way binding for the row's alarm switch, backed by the per-event setting in

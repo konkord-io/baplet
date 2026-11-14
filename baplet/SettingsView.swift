@@ -256,15 +256,31 @@ private struct MeetingsPane: View {
     }
 }
 
-/// Pane for recording the global shortcut that shows today's events from any app.
+/// Pane for recording the global shortcut that shows today's events from any app, and for
+/// choosing what Return does in that list.
 private struct ShortcutsPane: View {
+    @Environment(SettingsStore.self) private var settingsStore
+
     var body: some View {
+        @Bindable var settings = settingsStore
+
         Form {
             Section {
                 SettingsHelpText(TodayShortcutHelp.text)
             }
             Section {
                 KeyboardShortcuts.Recorder("Show today's events", name: .showToday)
+            }
+            Section {
+                Picker("Return in today's events", selection: $settings.todayReturnAction) {
+                    ForEach(TodayReturnAction.allCases) { action in
+                        Text(action.label).tag(action)
+                    }
+                }
+            } footer: {
+                Text("In the list, ↑ and ↓ pick an event, Return does this, ⌘Return does the other, and D turns the alarm on or off. Join meeting opens Calendar when the event has no meeting link.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

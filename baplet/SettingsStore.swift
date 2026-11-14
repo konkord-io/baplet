@@ -44,6 +44,35 @@ enum AlertStyle: String, CaseIterable, Identifiable {
     }
 }
 
+/// What Return does to the selected event in the Today panel; ⌘Return does the other one.
+enum TodayReturnAction: String, CaseIterable, Identifiable {
+    case joinMeeting
+    case openCalendar
+
+    var id: String { rawValue }
+
+    /// Label for the Settings picker and the Today panel's key hints.
+    var label: String {
+        switch self {
+        case .joinMeeting: "Join meeting"
+        case .openCalendar: "Open in Calendar"
+        }
+    }
+
+    /// Short form for the Today panel's key-hint strip.
+    var hintLabel: String {
+        switch self {
+        case .joinMeeting: "join"
+        case .openCalendar: "Calendar"
+        }
+    }
+
+    /// The action ⌘Return performs when this one is on Return.
+    var alternate: TodayReturnAction {
+        self == .joinMeeting ? .openCalendar : .joinMeeting
+    }
+}
+
 /// Observable settings store that persists user preferences to UserDefaults.
 /// Manages calendar selection, alert configuration, and per-event alarm opt-outs.
 @Observable
@@ -94,6 +123,11 @@ final class SettingsStore {
         didSet { defaults.set(meetingBrowserProfileID, forKey: Keys.meetingBrowserProfileID) }
     }
 
+    /// What Return does in the Today panel (⌘Return does the other action).
+    var todayReturnAction: TodayReturnAction {
+        didSet { defaults.set(todayReturnAction.rawValue, forKey: Keys.todayReturnAction) }
+    }
+
     /// Whether the user has finished the welcome guide; until then a launch with no
     /// calendars selected opens the guide instead of Settings.
     var onboardingCompleted: Bool {
@@ -115,6 +149,7 @@ final class SettingsStore {
         static let meetingBrowserID = "meetingBrowserID"
         static let meetingBrowserProfileID = "meetingBrowserProfileID"
         static let onboardingCompleted = "onboardingCompleted"
+        static let todayReturnAction = "todayReturnAction"
         /// Set once settings have been copied out of the old sandbox container.
         static let migratedFromSandboxContainer = "migratedFromSandboxContainer"
     }
@@ -163,6 +198,8 @@ final class SettingsStore {
         self.meetingBrowserID = defaults.string(forKey: Keys.meetingBrowserID)
         self.meetingBrowserProfileID = defaults.string(forKey: Keys.meetingBrowserProfileID)
         self.onboardingCompleted = defaults.bool(forKey: Keys.onboardingCompleted)
+        self.todayReturnAction = defaults.string(forKey: Keys.todayReturnAction)
+            .flatMap(TodayReturnAction.init(rawValue:)) ?? .joinMeeting
     }
 
     /// Copies settings saved while Baplet was sandboxed (before profile support needed the

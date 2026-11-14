@@ -155,19 +155,25 @@ enum BrowserService {
     /// Opens a meeting link using the browser and profile chosen in Settings.
     /// Falls back to the system default browser when none is chosen or the chosen one is no
     /// longer installed, and to the browser's default profile when no profile is chosen.
+    /// The browser always comes to the front (see `FocusHandoff`).
+    @MainActor
     static func openMeeting(_ url: URL, settings: SettingsStore) {
         guard let bundleID = settings.meetingBrowserID,
               let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+            FocusHandoff.prepare(forAppOpening: url)
             NSWorkspace.shared.open(url)
             return
         }
 
+        FocusHandoff.prepare(forBundleID: bundleID)
         let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
         if let profileID = settings.meetingBrowserProfileID,
            let family = profileFamily(forBundleID: bundleID) {
             configuration.arguments = launchArguments(for: family, profileID: profileID, url: url)
             configuration.createsNewApplicationInstance = true
             NSWorkspace.shared.openApplication(at: appURL, configuration: configuration)
+            FocusHandoff.bringToFront(bundleID: bundleID)
         } else {
             NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration)
         }
@@ -181,6 +187,39 @@ enum BrowserService {
             ["--profile-directory=\(profileID)", url.absoluteString]
         case .firefox:
             ["-P", profileID, url.absoluteString]
+        }
+    }
+}
+
+/// Hands focus to the app Baplet opens something in. Since macOS 14 an app may only bring
+/// another app to the front if it is active itself and explicitly yields to it. Baplet's
+/// alert and Today panels never make Baplet active, so without this the browser or Calendar
+/// would open behind whatever the user was doing.
+enum FocusHandoff {
+    /// Activates Baplet (allowed, since the user just clicked or typed in its panel) and yields
+    /// activation to the given app, so the app can come forward when it opens.
+    @MainActor
+    static func prepare(forBundleID bundleID: String) {
+        NSApp.activate()
+        NSApp.yieldActivation(toApplicationWithBundleIdentifier: bundleID)
+    }
+
+    /// Same as `prepare(forBundleID:)` for whichever app macOS will use to open `url`.
+    @MainActor
+    static func prepare(forAppOpening url: URL) {
+        guard let appURL = NSWorkspace.shared.urlForApplication(toOpen: url),
+              let bundleID = Bundle(url: appURL)?.bundleIdentifier else { return }
+        prepare(forBundleID: bundleID)
+    }
+
+    /// Brings the already-running copy of an app forward after a short delay. Used for browser
+    /// profile launches, where a second instance passes the link to the running browser and
+    /// exits, so the running browser never gets the activation request itself.
+    @MainActor
+    static func bringToFront(bundleID: String, after delay: Duration = .milliseconds(500)) {
+        Task { @MainActor in
+            try? await Task.sleep(for: delay)
+            NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first?.activate()
         }
     }
 }
