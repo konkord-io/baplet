@@ -87,7 +87,7 @@ final class AlarmManager {
 
         calendarService.fetchEvents(for: settingsStore)
         let events = calendarService.events
-        let now = Date()
+        let now = AppClock.now()
 
         cleanupStaleEntries(events: events, now: now)
         settingsStore.pruneDisabledEventAlarms(keeping: Set(events.compactMap(\.alarmKey)), now: now)
@@ -135,7 +135,7 @@ final class AlarmManager {
             style: settingsStore.alertStyle,
             props: AlertProps(
                 title: event.displayTitle,
-                time: EventTimeFormat.alertLine(now: Date(), start: event.startDate, end: event.endDate),
+                time: EventTimeFormat.alertLine(now: AppClock.now(), start: event.startDate, end: event.endDate),
                 location: event.location,
                 calendarName: event.calendar?.title ?? "",
                 meetingLink: meetingLink,
@@ -166,7 +166,7 @@ final class AlarmManager {
     /// Schedules an alarm to re-fire after the specified number of minutes, then shows the
     /// next due alert.
     private func snooze(key: String, minutes: Int) {
-        snoozedAlarms[key] = Date().addingTimeInterval(Double(minutes) * 60)
+        snoozedAlarms[key] = AppClock.now().addingTimeInterval(Double(minutes) * 60)
         if activeAlarmKey == key {
             activeAlarmKey = nil
         }

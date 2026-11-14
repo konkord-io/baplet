@@ -10,7 +10,7 @@ import SwiftUI
 @main
 struct BapletApp: App {
     @State private var calendarService = CalendarService()
-    @State private var settingsStore = SettingsStore()
+    @State private var settingsStore = DemoMode.makeSettingsStore()
     @State private var alarmManager = AlarmManager()
     @State private var updateService = UpdateService()
 

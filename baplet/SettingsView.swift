@@ -66,7 +66,7 @@ struct SettingsView: View {
         }
         .frame(width: 580, height: 420)
         .onAppear {
-            selectedPane = .calendars
+            selectedPane = DemoMode.scene?.settingsPane.flatMap(SettingsPane.init(rawValue:)) ?? .calendars
         }
     }
 }

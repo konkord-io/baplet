@@ -31,29 +31,54 @@
     </section>
 
     <section class="features" aria-label="Features">
-      <article>
-        <h2>Alerts you can't miss</h2>
-        <p>A popup or a full-screen alert a few minutes before each meeting, in one of four styles. Snooze, dismiss or join with a single key.</p>
+      <article class="feature">
+        <div class="feature-text">
+          <h2>Alerts you can't miss</h2>
+          <p>A popup or a full-screen alert a few minutes before each meeting, in one of four styles. Snooze, dismiss or join with a single key.</p>
+        </div>
+        <figure class="feature-shot feature-shot--wide">
+          <img src="assets/screenshots/alert-glass-dark.webp" alt="A full-screen Baplet alert for the Team stand-up with Snooze, Dismiss and Open buttons" loading="lazy">
+        </figure>
       </article>
-      <article>
-        <h2>Today at a keystroke</h2>
-        <p>Press your own global shortcut from any app to see the whole day. Pick a meeting with the arrow keys and press Return to join.</p>
+      <article class="feature">
+        <div class="feature-text">
+          <h2>Today at a keystroke</h2>
+          <p>Press your own global shortcut from any app to see the whole day. Pick a meeting with the arrow keys and press Return to join.</p>
+        </div>
+        <figure class="feature-shot feature-shot--tall">
+          <img src="assets/screenshots/today-dark.webp" alt="The Today panel listing the day's meetings with the stand-up selected" loading="lazy">
+        </figure>
       </article>
-      <article>
-        <h2>Join in the right browser</h2>
-        <p>Google Meet, Zoom, Teams, Webex and more open in the browser — and Chrome, Edge, Brave, Vivaldi or Firefox profile — you choose.</p>
+      <article class="feature">
+        <div class="feature-text">
+          <h2>Join in the right browser</h2>
+          <p>Google Meet, Zoom, Teams, Webex and more open in the browser — and Chrome, Edge, Brave, Vivaldi or Firefox profile — you choose.</p>
+        </div>
+        <figure class="feature-shot feature-shot--tall">
+          <img src="assets/screenshots/alert-popup-dark.webp" alt="The popup alert with its Open button for joining the meeting" loading="lazy">
+        </figure>
       </article>
-      <article>
-        <h2>Quietly in your menu bar</h2>
-        <p>A small countdown shows when the next meeting starts. Works with every calendar in the macOS Calendar app: iCloud, Google, Exchange and others.</p>
+      <article class="feature">
+        <div class="feature-text">
+          <h2>Quietly in your menu bar</h2>
+          <p>A small countdown shows when the next meeting starts. Works with every calendar in the macOS Calendar app: iCloud, Google, Exchange and others.</p>
+        </div>
+        <figure class="feature-shot feature-shot--tall">
+          <img src="assets/screenshots/menu-dark.webp" alt="The Baplet menu listing today's and tomorrow's meetings" loading="lazy">
+        </figure>
       </article>
     </section>
 
     <section class="install" id="install">
-      <h2>Installing</h2>
-      <div class="why">
+      <div class="install-head">
+        <img class="fish" src="assets/fish.webp" alt="Baplet's goldfish mascot in a Baplet T-shirt" width="220" height="147">
+        <div>
+          <h2>Installing</h2>
+          <div class="why">
         <h3>Why does macOS warn about Baplet?</h3>
         <p>Apple only lets apps open without a warning when they're signed with a paid Apple Developer ID and checked ("notarized") by Apple. Baplet is an early, free project and isn't signed that way yet, so macOS can't confirm who made it and blocks it until you allow it. Nothing is wrong with the download: Baplet is open source, so you can <a href="https://github.com/konkord-io/baplet">read every line of its code</a>. Signed builds will come later, and then this extra step goes away.</p>
+          </div>
+        </div>
       </div>
       <ol>
         <li>Open the downloaded <code>Baplet.dmg</code> and drag <strong>Baplet</strong> to <strong>Applications</strong>.</li>
@@ -62,7 +87,7 @@
         <li>Allow calendar access, and the welcome guide takes it from there.</li>
       </ol>
       <p class="install-alt">Prefer Terminal? <code>xattr -dr com.apple.quarantine /Applications/Baplet.app</code> does the same as steps 2–3.</p>
-      <p class="install-alt">Updating? Each new version you download needs steps 2–3 again, and macOS asks for calendar access again. Right-click → Open no longer skips the warning on recent macOS versions.</p>
+      <p class="install-alt">Updating? Use <strong>Check for Updates</strong> in Baplet's Settings → About, or click <strong>Update available</strong> at the bottom of the menu: Baplet downloads, verifies and installs the new version itself, with no Open Anyway step. macOS asks for calendar access again after an update. (Right-click → Open no longer skips the first-launch warning on recent macOS versions.)</p>
     </section>
   </main>
 

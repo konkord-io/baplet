@@ -43,7 +43,7 @@ struct OnboardingView: View {
         }
         .frame(width: 600, height: 560)
         .onAppear {
-            step = .welcome
+            step = DemoMode.scene == .welcomeTheme ? .theme : .welcome
         }
     }
 

@@ -194,9 +194,9 @@ struct MenuBarContentView: View {
     /// Returns a human-readable label for a given day: "Today", "Tomorrow", or a formatted date.
     private func dayLabel(for date: Date) -> String {
         let calendar = Calendar.current
-        if calendar.isDateInToday(date) {
+        if calendar.isDate(date, inSameDayAs: AppClock.now()) {
             return "Today"
-        } else if calendar.isDateInTomorrow(date) {
+        } else if calendar.date(byAdding: .day, value: 1, to: AppClock.now()).map { calendar.isDate(date, inSameDayAs: $0) } == true {
             return "Tomorrow"
         } else {
             return date.formatted(date: .abbreviated, time: .omitted)

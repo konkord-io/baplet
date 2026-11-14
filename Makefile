@@ -29,7 +29,7 @@ ifeq ($(VERBOSE),1)
 SUMMARY := cat
 endif
 
-.PHONY: menu run run-logs test build dmg stop clean xcode reset reset-welcome reset-settings reset-calendar reset-all
+.PHONY: menu run run-logs test build screenshots dmg stop clean xcode reset reset-welcome reset-settings reset-calendar reset-all
 
 # Prints a numbered menu of the targets whose name matches $(1) (an awk regex), titled $(2),
 # with $(3) as the label of the leave option, then runs the chosen target.
@@ -53,7 +53,7 @@ define confirm
 endef
 
 menu:
-	$(call pick_from,^(run|run-logs|test|build|dmg|stop|clean|xcode|reset)$$,Baplet,quit)
+	$(call pick_from,^(run|run-logs|test|build|screenshots|dmg|stop|clean|xcode|reset)$$,Baplet,quit)
 
 run: build ## Build and (re)start the app
 	@pkill -x Baplet || true
@@ -70,6 +70,9 @@ test: ## Run the unit tests
 
 build: ## Build the app (Debug)
 	@$(XCODEBUILD) -configuration Debug build 2>&1 | $(SUMMARY)
+
+screenshots: ## Capture the website screenshots from demo mode (SCENES="menu today" for a subset)
+	@scripts/screenshots.sh $(SCENES)
 
 dmg: ## Build an ad-hoc signed release DMG (VERSION=1.2.3 BUILD_NUMBER=n)
 	@$(XCODEBUILD) $(ADHOC_FLAGS) -configuration Release MARKETING_VERSION=$(VERSION) CURRENT_PROJECT_VERSION=$(BUILD_NUMBER) build 2>&1 | $(SUMMARY)

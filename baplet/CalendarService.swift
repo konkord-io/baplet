@@ -34,9 +34,19 @@ final class CalendarService {
     private var lastEnabledCalendarIDs: Set<String> = []
     private var lastDaysToShow: Int = SettingsStore.defaultDaysToShow
 
+    /// Sample calendars and events served instead of EventKit data in demo mode.
+    private var demoCalendars: [EKCalendar] = []
+    private var demoEvents: [EKEvent] = []
+
     /// Registers an observer for EKEventStoreChanged notifications so the event list
-    /// refreshes automatically when calendars or events change externally.
+    /// refreshes automatically when calendars or events change externally. In demo mode it
+    /// builds the sample calendars and events and reports full access instead.
     init() {
+        if DemoMode.isEnabled {
+            authorizationStatus = .fullAccess
+            demoCalendars = DemoData.makeCalendars(store: store)
+            demoEvents = DemoData.makeEvents(store: store, calendars: demoCalendars)
+        }
         changeObserver = NotificationCenter.default.addObserver(
             forName: .EKEventStoreChanged,
             object: store,
@@ -72,6 +82,11 @@ final class CalendarService {
 
     /// Loads all sources and calendars from the event store into the observed properties.
     func loadCalendars() {
+        if DemoMode.isEnabled {
+            calendars = demoCalendars
+            sources = Array(Set(demoCalendars.compactMap(\.source)))
+            return
+        }
         sources = store.sources.sorted { $0.title.localizedCompare($1.title) == .orderedAscending }
         calendars = store.calendars(for: .event).sorted { $0.title.localizedCompare($1.title) == .orderedAscending }
     }
@@ -95,7 +110,7 @@ final class CalendarService {
         lastEnabledCalendarIDs = enabledCalendarIDs
         lastDaysToShow = daysToShow
 
-        let now = Date()
+        let now = AppClock.now()
         let calendar = Calendar.current
         guard let lastDay = calendar.date(byAdding: .day, value: daysToShow, to: now) else {
             events = []
@@ -116,7 +131,7 @@ final class CalendarService {
     /// the given calendars, without changing the published event list. Used by the welcome
     /// guide's Test button to preview what the selected calendars contain.
     func upcomingEvents(in calendarIDs: Set<String>, days: Int = 7, limit: Int = 5) -> [EKEvent] {
-        let now = Date()
+        let now = AppClock.now()
         guard let end = Calendar.current.date(byAdding: .day, value: days, to: now) else { return [] }
         return Array(events(from: now, to: end, inCalendars: calendarIDs).prefix(limit))
     }
@@ -125,7 +140,7 @@ final class CalendarService {
     /// the given calendars: all-day events first, then by start time. Used by the Today panel.
     func todaysEvents(enabledCalendarIDs: Set<String>) -> [EKEvent] {
         let calendar = Calendar.current
-        let start = calendar.startOfDay(for: Date())
+        let start = calendar.startOfDay(for: AppClock.now())
         guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
         return events(from: start, to: end, inCalendars: enabledCalendarIDs).sorted {
             if $0.isAllDay != $1.isAllDay { return $0.isAllDay }
@@ -138,6 +153,12 @@ final class CalendarService {
     /// EventKit predicate with no calendars would search every calendar instead.
     private func events(from start: Date, to end: Date, inCalendars calendarIDs: Set<String>) -> [EKEvent] {
         let selected = calendars.filter { calendarIDs.contains($0.calendarIdentifier) }
+        if DemoMode.isEnabled {
+            return demoEvents.filter { event in
+                event.endDate > start && event.startDate < end
+                    && selected.contains { $0.calendarIdentifier == event.calendar.calendarIdentifier }
+            }.sorted { $0.startDate < $1.startDate }
+        }
         guard !selected.isEmpty else { return [] }
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: selected)
         return store.events(matching: predicate).sorted { $0.startDate < $1.startDate }

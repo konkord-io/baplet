@@ -55,9 +55,15 @@ struct MenuBarLabel: View {
     /// fresh install, or Settings if the guide was already finished.
     /// Finally, also when calendar access is missing, it starts the automatic daily update
     /// check (`UpdateService.startAutomaticChecks`).
-    /// Does nothing when the app only hosts unit tests (`AppEnvironment.isRunningTests`).
+    /// Does nothing when the app only hosts unit tests (`AppEnvironment.isRunningTests`). In
+    /// demo mode it hands over to `DemoMode.start` and skips all of the above, including the
+    /// update check.
     private func startUp() async {
         guard !AppEnvironment.isRunningTests else { return }
+        if DemoMode.isEnabled {
+            DemoMode.start(calendarService: calendarService, settingsStore: settingsStore, openWindow: openWindow)
+            return
+        }
         defer { updateService.startAutomaticChecks(settings: settingsStore) }
         if !Self.registeredTodayShortcut {
             Self.registeredTodayShortcut = true
