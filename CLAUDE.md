@@ -24,6 +24,8 @@ Startup (access request, event load, `AlarmManager.start`, and when no calendars
 
 `BrowserService` lists browsers that open `https` links, reads Chromium (`Local State`) and Firefox (`profiles.ini`) profiles, and opens meeting links in the browser/profile chosen in Settings → Meetings. Every meeting link goes through `BrowserService.openMeeting`.
 
+`TodayPanel` is a Spotlight-like floating panel of today's events (reusing `CalendarEventRow`), opened from the menu header or the global shortcut `KeyboardShortcuts.Name.showToday`. That shortcut comes from the KeyboardShortcuts package (pinned to an exact version; `Package.resolved` is committed), is registered in `MenuBarLabel.startUp` and has no default.
+
 `AlertService` is a stateless enum that does the AppKit work SwiftUI can't: `NSPanel` alerts (floating popup, or borderless full screen), sound, meeting-link extraction, opening events in Calendar, and the O/D/S/Return keyboard shortcuts. The full-screen panel sits at `.popUpMenu - 1`: any higher and SwiftUI `Menu` dropdowns open behind it.
 
 Full-screen alert styles: `FullScreenAlertRouter` picks the view for the chosen `AlertStyle`, each view takes `FullScreenAlertProps`. A new style = new `AlertStyle` case + view + router branch.

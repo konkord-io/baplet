@@ -15,6 +15,10 @@ import SwiftUI
 struct CalendarEventRow: View {
     let event: EKEvent
 
+    /// Called after the user joins the meeting or opens the event in Calendar from this row,
+    /// so a container such as the Today panel can close itself.
+    var onOpened: (() -> Void)? = nil
+
     @Environment(SettingsStore.self) private var settingsStore
     @State private var isHovered = false
 
@@ -52,6 +56,7 @@ struct CalendarEventRow: View {
             if let meetingLink = AlertService.extractMeetingLink(from: event) {
                 Button {
                     BrowserService.openMeeting(meetingLink.url, settings: settingsStore)
+                    onOpened?()
                 } label: {
                     Image(systemName: meetingLink.icon)
                         .font(.system(size: 16))
@@ -83,6 +88,7 @@ struct CalendarEventRow: View {
         }
         .onTapGesture {
             openInCalendar()
+            onOpened?()
         }
     }
 

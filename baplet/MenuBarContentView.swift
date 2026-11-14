@@ -48,6 +48,14 @@ struct MenuBarContentView: View {
             .help("Refresh events")
 
             Button {
+                TodayPanel.show(calendarService: calendarService, settingsStore: settingsStore)
+            } label: {
+                Image(systemName: "calendar.day.timeline.left")
+            }
+            .buttonStyle(.headerIcon)
+            .help("Show today's events")
+
+            Button {
                 settingsStore.alarmsPaused.toggle()
                 alarmManager.recheckNow()
             } label: {
@@ -60,7 +68,7 @@ struct MenuBarContentView: View {
             Button {
                 openWindow.openSettings()
             } label: {
-                Image(systemName: "gear")
+                Image(systemName: "gearshape")
             }
             .buttonStyle(.headerIcon)
 
