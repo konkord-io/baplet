@@ -286,3 +286,24 @@ kbd {
 .why .sponsor-note { margin-top: 10px; }
 
 .open-settings .button { margin: 8px 0 24px; }
+
+.docs-code {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  font-size: 15px;
+}
+.docs-code code { background: none; border: 0; padding: 0; }
+
+.docs-more {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.docs-more summary { cursor: pointer; font-weight: 600; color: var(--text); }
+.docs-more[open] summary { margin-bottom: 8px; }
+.docs-more p:last-child { margin-bottom: 0; }

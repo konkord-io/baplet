@@ -31,16 +31,36 @@
         <img class="fish" src="assets/fish_muscles.webp" alt="Baplet's goldfish flexing its fins, ready to go" width="220" height="147">
         <div>
           <h2>Installing</h2>
-          <p>Baplet needs macOS 26.3 or later. <a href="https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg">Download Baplet.dmg</a>, then:</p>
+          <p>Baplet needs macOS 26.3 or later. It takes a minute, and one extra step the first time you open it.</p>
         </div>
       </div>
-      <ol>
-        <li>Open the downloaded <code>Baplet.dmg</code> and drag <strong>Baplet</strong> to <strong>Applications</strong>.</li>
-        <li>Start Baplet. macOS says it can't verify the developer. Click <strong>Done</strong> (not Move to Bin).</li>
-        <li>Open <strong>System Settings → Privacy &amp; Security</strong>, scroll down to the message about Baplet, click <strong>Open Anyway</strong> and confirm with your password or Touch ID.</li>
-        <li>Allow calendar access, and the welcome guide takes it from there.</li>
-      </ol>
-      <p class="docs-note">Prefer Terminal? <code>xattr -dr com.apple.quarantine /Applications/Baplet.app</code> does the same as steps 2–3. (Right-click → Open no longer skips the first-launch warning on recent macOS versions.)</p>
+      <details class="docs-more" id="manual" open>
+        <summary>Install from the download</summary>
+        <p><a href="https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg">Download Baplet.dmg</a>, then:</p>
+        <ol>
+          <li>Open the downloaded <code>Baplet.dmg</code> and drag <strong>Baplet</strong> to <strong>Applications</strong>.</li>
+          <li>Start Baplet. macOS says it can't verify the developer. Click <strong>Done</strong> (not Move to Bin).</li>
+          <li>Open <strong>System Settings → Privacy &amp; Security</strong>, scroll down to the message about Baplet, click <strong>Open Anyway</strong> and confirm with your password or Touch ID.</li>
+          <li>Allow calendar access, and the welcome guide takes it from there.</li>
+        </ol>
+        <p class="docs-note">Prefer Terminal? <code>xattr -dr com.apple.quarantine /Applications/Baplet.app</code> does the same as steps 2–3. (Right-click → Open no longer skips the first-launch warning on recent macOS versions.)</p>
+      </details>
+      <details class="docs-more" id="homebrew">
+        <summary>Install with Homebrew instead</summary>
+        <p>If you manage your apps with <a href="https://brew.sh">Homebrew</a>, install Baplet from the Konkord tap instead of the DMG:</p>
+        <pre class="docs-code"><code>brew trust konkord-io/tap
+brew install konkord-io/tap/baplet</code></pre>
+        <p class="docs-note">Homebrew asks you to trust the tap once. macOS still blocks Baplet the first time you open it, so do steps 2–4 above. Baplet updates itself, and <code>brew uninstall --zap baplet</code> removes it with its settings.</p>
+      </details>
+      <details class="docs-more" id="verify">
+        <summary>Verify your download (Terminal)</summary>
+        <p>Baplet isn't signed by Apple, but every release is signed with Baplet's own certificate. Before you click Open Anyway, you can check in Terminal that your copy is genuine and unchanged:</p>
+        <pre class="docs-code"><code>codesign --verify --deep --strict /Applications/Baplet.app &amp;&amp; echo "Intact"
+codesign -d -r- /Applications/Baplet.app 2&gt;&amp;1 | grep -o 'certificate root = H"[0-9a-f]*"'</code></pre>
+        <p>The first command should print <code>Intact</code>, and the second exactly:</p>
+        <pre class="docs-code"><code>certificate root = H"476a66de31db738a85b5e21719b82752ca256184"</code></pre>
+        <p class="docs-note">That is the fingerprint of Baplet's signing certificate. If you see an error or a different fingerprint, don't open that copy: delete it and download Baplet from this site.</p>
+      </details>
       <div class="why">
         <h3>Why does macOS warn about Baplet?</h3>
         <p>Apple only lets apps open without a warning when they're signed with a paid Apple Developer ID and checked ("notarized") by Apple. Baplet is free software, and a paid Apple account doesn't fit that, so it isn't signed that way: macOS can't confirm who made it and blocks it until you allow it. Nothing is wrong with the download: Baplet is open source, so you can <a href="https://github.com/konkord-io/baplet">read every line of its code</a>. You only do this once; updates install from inside Baplet without the extra step.</p>
@@ -155,5 +175,13 @@
     <span>·</span>
     <span>© 2026 Jakob Vad Nielsen</span>
   </footer>
+  <script>
+    function openFromHash() {
+      const target = location.hash && document.querySelector(location.hash);
+      if (target && target.tagName === "DETAILS") target.open = true;
+    }
+    window.addEventListener("hashchange", openFromHash);
+    openFromHash();
+  </script>
 </body>
 </html>
