@@ -115,6 +115,27 @@ final class SettingsStore {
         didSet { defaults.set(Array(disabledEventAlarms), forKey: Keys.disabledEventAlarms) }
     }
 
+    /// `EKEvent.alarmKey`s of occurrences outside working hours whose alarm the user switched
+    /// on, since those are quiet by default. Keys of ended events are pruned.
+    var enabledOutsideHoursAlarms: Set<String> {
+        didSet { defaults.set(Array(enabledOutsideHoursAlarms), forKey: Keys.enabledOutsideHoursAlarms) }
+    }
+
+    /// When Baplet alerts by default; off until the user turns it on.
+    var workingHours: WorkingHours {
+        didSet {
+            defaults.set(workingHours.isEnabled, forKey: Keys.workingHoursEnabled)
+            defaults.set(workingHours.startMinutes, forKey: Keys.workingHoursStart)
+            defaults.set(workingHours.endMinutes, forKey: Keys.workingHoursEnd)
+            defaults.set(workingHours.weekdays.sorted(), forKey: Keys.workingHoursWeekdays)
+        }
+    }
+
+    /// How long before a meeting the menu bar starts counting down to it.
+    var countdownRange: CountdownRange {
+        didSet { defaults.set(countdownRange.rawValue, forKey: Keys.countdownRange) }
+    }
+
     /// Lead time used until the user picks one, in minutes.
     static let defaultMinutesBefore = 5
 
@@ -166,6 +187,12 @@ final class SettingsStore {
         static let minutesBefore = "minutesBefore"
         static let daysToShow = "daysToShow"
         static let disabledEventAlarms = "disabledEventAlarmKeys"
+        static let enabledOutsideHoursAlarms = "enabledOutsideHoursAlarmKeys"
+        static let workingHoursEnabled = "workingHoursEnabled"
+        static let workingHoursStart = "workingHoursStartMinutes"
+        static let workingHoursEnd = "workingHoursEndMinutes"
+        static let workingHoursWeekdays = "workingHoursWeekdays"
+        static let countdownRange = "countdownRange"
         /// Legacy key holding bare event identifiers, which silenced every occurrence of a
         /// recurring event. Dropped on launch, since the old entries can't be mapped to one
         /// occurrence.
@@ -214,6 +241,17 @@ final class SettingsStore {
         defaults.removeObject(forKey: Keys.legacyDisabledEventAlarms)
         let storedDisabledAlarms = defaults.stringArray(forKey: Keys.disabledEventAlarms) ?? []
         self.disabledEventAlarms = Set(storedDisabledAlarms)
+        self.enabledOutsideHoursAlarms = Set(defaults.stringArray(forKey: Keys.enabledOutsideHoursAlarms) ?? [])
+
+        let standard = WorkingHours.standard
+        self.workingHours = WorkingHours(
+            isEnabled: defaults.bool(forKey: Keys.workingHoursEnabled),
+            startMinutes: defaults.object(forKey: Keys.workingHoursStart) as? Int ?? standard.startMinutes,
+            endMinutes: defaults.object(forKey: Keys.workingHoursEnd) as? Int ?? standard.endMinutes,
+            weekdays: (defaults.array(forKey: Keys.workingHoursWeekdays) as? [Int]).map(Set.init) ?? standard.weekdays
+        )
+        self.countdownRange = defaults.string(forKey: Keys.countdownRange)
+            .flatMap(CountdownRange.init(rawValue:)) ?? .allDay
 
         self.meetingBrowserID = defaults.string(forKey: Keys.meetingBrowserID)
         self.meetingBrowserProfileID = defaults.string(forKey: Keys.meetingBrowserProfileID)
@@ -252,36 +290,58 @@ final class SettingsStore {
         }
     }
 
-    /// Switches the alarm of one event occurrence (by `EKEvent.alarmKey`) on or off.
+    /// Switches the alarm of one event occurrence (by `EKEvent.alarmKey`) on or off. Inside
+    /// working hours alarms are on unless switched off; outside them, off unless switched on.
     func toggleEventAlarm(key: String) {
-        if disabledEventAlarms.contains(key) {
-            disabledEventAlarms.remove(key)
+        if isOutsideWorkingHours(key: key) {
+            enabledOutsideHoursAlarms.formSymmetricDifference([key])
         } else {
-            disabledEventAlarms.insert(key)
+            disabledEventAlarms.formSymmetricDifference([key])
         }
     }
 
     /// Switches the alarm of one event occurrence off; used when its alert is dismissed.
     func disableEventAlarm(key: String) {
-        disabledEventAlarms.insert(key)
+        if isOutsideWorkingHours(key: key) {
+            enabledOutsideHoursAlarms.remove(key)
+        } else {
+            disabledEventAlarms.insert(key)
+        }
     }
 
-    /// Returns whether the alarm is enabled for one event occurrence.
+    /// Returns whether the alarm is enabled for one event occurrence: inside working hours
+    /// unless switched off, outside them only when switched on.
     func isAlarmEnabled(key: String) -> Bool {
-        !disabledEventAlarms.contains(key)
+        if isOutsideWorkingHours(key: key) {
+            return enabledOutsideHoursAlarms.contains(key)
+        }
+        return !disabledEventAlarms.contains(key)
     }
 
-    /// Forgets switched-off alarms of occurrences that have ended, so the stored set doesn't
-    /// grow forever. A key counts as ended when its occurrence started before `now` and it is
-    /// not among `liveKeys`, the keys of the currently fetched events (which include events
-    /// still running). Only writes when something was removed.
+    /// Whether the occurrence behind `key` starts outside working hours, read from the start
+    /// time stored in the key. Keys without one (demo events) count as inside.
+    func isOutsideWorkingHours(key: String) -> Bool {
+        guard let start = EventAlarmKey.startDate(of: key) else { return false }
+        return !workingHours.contains(start)
+    }
+
+    /// Forgets switched-off (and, outside working hours, switched-on) alarms of occurrences
+    /// that have ended, so the stored sets don't grow forever. A key counts as ended when its
+    /// occurrence started before `now` and it is not among `liveKeys`, the keys of the
+    /// currently fetched events (which include events still running). Only writes when
+    /// something was removed.
     func pruneDisabledEventAlarms(keeping liveKeys: Set<String>, now: Date) {
-        let kept = disabledEventAlarms.filter { key in
+        let isLive: (String) -> Bool = { key in
             guard let start = EventAlarmKey.startDate(of: key) else { return false }
             return start >= now || liveKeys.contains(key)
         }
-        if kept.count != disabledEventAlarms.count {
-            disabledEventAlarms = kept
+        let keptDisabled = disabledEventAlarms.filter(isLive)
+        if keptDisabled.count != disabledEventAlarms.count {
+            disabledEventAlarms = keptDisabled
+        }
+        let keptEnabled = enabledOutsideHoursAlarms.filter(isLive)
+        if keptEnabled.count != enabledOutsideHoursAlarms.count {
+            enabledOutsideHoursAlarms = keptEnabled
         }
     }
 

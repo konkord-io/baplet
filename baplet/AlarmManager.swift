@@ -9,7 +9,7 @@ import EventKit
 import Foundation
 
 /// Represents the current state of the menu bar icon.
-enum MenuBarStatus {
+enum MenuBarStatus: Equatable {
     case idle
     case upcoming(minutesLeft: Int)
     case active
@@ -25,9 +25,56 @@ enum MenuBarStatus {
     var label: String? {
         switch self {
         case .idle, .paused: nil
-        case .upcoming(let minutes): "\(minutes)m"
+        case .upcoming(let minutes): Self.countdownText(minutes: minutes)
         case .active: "NOW"
         }
+    }
+
+    /// A countdown in minutes as the menu bar shows it: "3m" under an hour, then "1h34m",
+    /// or "2h" on the hour.
+    static func countdownText(minutes: Int) -> String {
+        guard minutes >= 60 else { return "\(minutes)m" }
+        let hours = minutes / 60
+        let rest = minutes % 60
+        return rest == 0 ? "\(hours)h" : "\(hours)h\(rest)m"
+    }
+
+    /// Works out the menu bar status from the fetched events. Only timed events whose alarm is
+    /// on (`isAlarmEnabled`, which also applies working hours) count, so the menu bar matches
+    /// what will alert. During such a meeting it shows NOW, unless the next one starts within
+    /// the alert lead time, which then gets the countdown. Otherwise it counts down to the next
+    /// meeting today once it is within `countdownMinutes` (nil: any time today), and is idle
+    /// when nothing qualifies. Pure, so the rules can be tested without a clock or EventKit.
+    static func compute(
+        events: [EKEvent],
+        now: Date,
+        isPaused: Bool,
+        alertLeadMinutes: Int,
+        countdownMinutes: Int?,
+        isAlarmEnabled: (EKEvent) -> Bool,
+        calendar: Calendar = .current
+    ) -> MenuBarStatus {
+        if isPaused { return .paused }
+
+        let relevant = events.filter { !$0.isAllDay && isAlarmEnabled($0) }
+        let isRunning = relevant.contains { $0.startDate <= now && now < $0.endDate }
+        let next = relevant
+            .filter { $0.startDate > now && calendar.isDate($0.startDate, inSameDayAs: now) }
+            .min { $0.startDate < $1.startDate }
+        let secondsToNext = next.map { $0.startDate.timeIntervalSince(now) }
+        let minutesToNext = secondsToNext.map { max(1, Int(ceil($0 / 60))) }
+
+        if isRunning {
+            if let secondsToNext, let minutesToNext, secondsToNext <= Double(alertLeadMinutes) * 60 {
+                return .upcoming(minutesLeft: minutesToNext)
+            }
+            return .active
+        }
+        guard let secondsToNext, let minutesToNext else { return .idle }
+        if let countdownMinutes, secondsToNext > Double(countdownMinutes) * 60 {
+            return .idle
+        }
+        return .upcoming(minutesLeft: minutesToNext)
     }
 }
 
@@ -182,34 +229,17 @@ final class AlarmManager {
         }
     }
 
-    /// Updates the menu bar icon status based on the nearest upcoming non-all-day event.
-    /// Shows the faded icon when paused, "NOW" during an active event, a countdown for
-    /// upcoming events within the lead time, or idle when nothing is imminent.
+    /// Updates the menu bar status from the fetched events with the current settings; the
+    /// rules live in `MenuBarStatus.compute`.
     private func updateMenuBarStatus(events: [EKEvent], now: Date, settingsStore: SettingsStore) {
-        if settingsStore.alarmsPaused {
-            menuBarStatus = .paused
-            return
-        }
-
-        let leadSeconds = Double(settingsStore.minutesBefore) * 60
-
-        for event in events {
-            guard !event.isAllDay else { continue }
-
-            if now >= event.startDate, now < event.endDate {
-                menuBarStatus = .active
-                return
-            }
-
-            let timeUntilStart = event.startDate.timeIntervalSince(now)
-            if timeUntilStart > 0, timeUntilStart <= leadSeconds {
-                let minutesLeft = max(1, Int(ceil(timeUntilStart / 60)))
-                menuBarStatus = .upcoming(minutesLeft: minutesLeft)
-                return
-            }
-        }
-
-        menuBarStatus = .idle
+        menuBarStatus = MenuBarStatus.compute(
+            events: events,
+            now: now,
+            isPaused: settingsStore.alarmsPaused,
+            alertLeadMinutes: settingsStore.minutesBefore,
+            countdownMinutes: settingsStore.countdownRange.minutesAhead(alertLeadMinutes: settingsStore.minutesBefore),
+            isAlarmEnabled: { event in event.alarmKey.map(settingsStore.isAlarmEnabled(key:)) ?? false }
+        )
     }
 
     /// Forgets snoozes and the active alert of events that have ended or are no longer

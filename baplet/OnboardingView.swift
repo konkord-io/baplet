@@ -13,7 +13,7 @@ import SwiftUI
 struct OnboardingView: View {
     /// The guide's pages, in order.
     enum Step: Int, CaseIterable {
-        case welcome, calendars, theme, shortcut, finish
+        case welcome, calendars, theme, workingHours, shortcut, finish
     }
 
     @Environment(SettingsStore.self) private var settingsStore
@@ -28,6 +28,7 @@ struct OnboardingView: View {
                 case .welcome: OnboardingWelcomeStep()
                 case .calendars: OnboardingCalendarsStep()
                 case .theme: OnboardingThemeStep()
+                case .workingHours: OnboardingWorkingHoursStep()
                 case .shortcut: OnboardingShortcutStep(hasShortcut: $hasTodayShortcut)
                 case .finish: OnboardingFinishStep()
                 }
@@ -76,7 +77,7 @@ struct OnboardingView: View {
     private var primaryTitle: String {
         switch step {
         case .welcome: "Get Started"
-        case .calendars, .theme: "Next"
+        case .calendars, .theme, .workingHours: "Next"
         case .shortcut: hasTodayShortcut ? "Next" : "Skip for Now"
         case .finish: "Finish"
         }
@@ -358,7 +359,37 @@ struct AlertStylePreview: View {
     )
 }
 
-/// Step 4 (optional): record the global shortcut for the Today list. The primary button reads
+/// Step 4 (optional): working hours, so meetings in the evening or at the weekend stay quiet.
+private struct OnboardingWorkingHoursStep: View {
+    /// Shows the question with the watch fish, the shared working hours rows and where to
+    /// change them later.
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("When do you want alerts?")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    SettingsHelpText(WorkingHoursHelp.text)
+                }
+                Image("fish_clock")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(height: 110)
+                    .accessibilityHidden(true)
+            }
+            Form {
+                WorkingHoursEditor()
+            }
+            .formStyle(.grouped)
+            .scrollDisabled(true)
+            .frame(height: 200)
+            SettingsHelpText("Leave it off to get alerts for every meeting. You can change this any time in Settings → Alerts.")
+        }
+    }
+}
+
+/// Step 5 (optional): record the global shortcut for the Today list. The primary button reads
 /// "Skip for Now" until a shortcut is recorded.
 private struct OnboardingShortcutStep: View {
     @Binding var hasShortcut: Bool
@@ -382,7 +413,7 @@ private struct OnboardingShortcutStep: View {
     }
 }
 
-/// Step 5: where to find Baplet from now on.
+/// Step 6: where to find Baplet from now on.
 private struct OnboardingFinishStep: View {
     var body: some View {
         VStack(spacing: 18) {

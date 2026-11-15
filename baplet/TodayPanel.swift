@@ -251,11 +251,38 @@ private struct TodayView: View {
                 .padding(.vertical, 20)
             } else {
                 eventList
+                if hasQuietMeetings {
+                    quietMeetingsNote
+                }
                 Divider()
                 keyHints
             }
         }
         .frame(width: 420)
+    }
+
+    /// True when working hours are on and some listed meeting starts outside them with its
+    /// alarm still off, so it won't alert unless the user switches it on.
+    private var hasQuietMeetings: Bool {
+        guard settingsStore.workingHours.isEnabled else { return false }
+        return model.events.contains { event in
+            guard !event.isAllDay, let key = event.alarmKey else { return false }
+            return settingsStore.isOutsideWorkingHours(key: key) && !settingsStore.isAlarmEnabled(key: key)
+        }
+    }
+
+    /// Small note under the list explaining why some meetings are unchecked.
+    private var quietMeetingsNote: some View {
+        Label {
+            Text("Meetings outside your working hours (\(settingsStore.workingHours.timeRangeText())) won't alert. Press D or tick the box to alert anyway.")
+        } icon: {
+            Image(systemName: "moon.zzz")
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 
     /// The scrollable rows; the selection scrolls into view whenever it changes.

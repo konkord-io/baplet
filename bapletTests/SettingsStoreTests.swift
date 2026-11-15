@@ -180,6 +180,78 @@ struct SettingsStoreTests {
         }
     }
 
+    /// A local-time date in November 2026 (the 18th is a Wednesday, the 21st a Saturday),
+    /// local because `SettingsStore` reads working hours with the current calendar.
+    func localDate(day: Int, hour: Int) -> Date {
+        Calendar.current.date(from: DateComponents(year: 2026, month: 11, day: day, hour: hour))!
+    }
+
+    /// Checks that working hours start off at Mon–Fri 08:00–16:00, the countdown at all day,
+    /// and nothing is switched on outside working hours.
+    @Test
+    func workingHoursAndCountdownDefaults() {
+        withDefaults { defaults in
+            let store = SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist)
+            #expect(store.workingHours == .standard)
+            #expect(!store.workingHours.isEnabled)
+            #expect(store.countdownRange == .allDay)
+            #expect(store.enabledOutsideHoursAlarms.isEmpty)
+        }
+    }
+
+    /// Checks that, with working hours on, meetings inside them alert unless switched off and
+    /// meetings outside them only when switched on, and that dismissing undoes a switch-on.
+    @Test
+    func alarmsFollowWorkingHours() {
+        withDefaults { defaults in
+            let store = SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist)
+            store.workingHours.isEnabled = true
+            let inside = EventAlarmKey.make(eventID: "a", start: localDate(day: 18, hour: 10))
+            let outside = EventAlarmKey.make(eventID: "b", start: localDate(day: 21, hour: 10))
+
+            #expect(store.isAlarmEnabled(key: inside))
+            #expect(!store.isAlarmEnabled(key: outside))
+
+            store.toggleEventAlarm(key: inside)
+            store.toggleEventAlarm(key: outside)
+            #expect(!store.isAlarmEnabled(key: inside))
+            #expect(store.isAlarmEnabled(key: outside))
+            #expect(store.disabledEventAlarms == [inside])
+            #expect(store.enabledOutsideHoursAlarms == [outside])
+
+            store.disableEventAlarm(key: outside)
+            #expect(!store.isAlarmEnabled(key: outside))
+            #expect(store.enabledOutsideHoursAlarms.isEmpty)
+        }
+    }
+
+    /// Checks that working hours and the countdown choice survive a reload.
+    @Test
+    func workingHoursSurviveReload() {
+        withDefaults { defaults in
+            let store = SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist)
+            store.workingHours = WorkingHours(isEnabled: true, startMinutes: 9 * 60, endMinutes: 17 * 60 + 30, weekdays: [2, 4])
+            store.countdownRange = .minutes30
+            let reloaded = SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist)
+            #expect(reloaded.workingHours == store.workingHours)
+            #expect(reloaded.countdownRange == .minutes30)
+        }
+    }
+
+    /// Checks that pruning also forgets switched-on alarms of ended occurrences.
+    @Test
+    func pruneAlsoForgetsEnabledOutsideHours() {
+        withDefaults { defaults in
+            let now = Date(timeIntervalSince1970: 1_800_000_000)
+            let ended = EventAlarmKey.make(eventID: "a", start: now.addingTimeInterval(-7200))
+            let future = EventAlarmKey.make(eventID: "c", start: now.addingTimeInterval(3600))
+            let store = SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist)
+            store.enabledOutsideHoursAlarms = [ended, future]
+            store.pruneDisabledEventAlarms(keeping: [], now: now)
+            #expect(store.enabledOutsideHoursAlarms == [future])
+        }
+    }
+
     /// Checks the Return action default and that `alternate` flips between the two actions.
     @Test
     func todayReturnActionAlternate() {
