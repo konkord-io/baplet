@@ -54,7 +54,7 @@ struct MenuBarContentView: View {
 
     /// Handles the menu's keys like the Today panel's: ↑/↓ select an event, Return does the
     /// Settings → Shortcuts action and ⌘Return the other one, D switches the selected event's
-    /// alarm. Return and D pass through while nothing is selected. The handler only reads
+    /// alarm, and Escape closes the menu. Return and D pass through while nothing is selected. The handler only reads
     /// reference types, so it sees fresh events and settings although it is installed once.
     private func installKeyHandling(for window: NSWindow) {
         guard menuWindow !== window else { return }
@@ -62,7 +62,7 @@ struct MenuBarContentView: View {
         let calendarService = calendarService
         let settingsStore = settingsStore
         let selection = selection
-        keyMonitor.start(for: window) { event in
+        keyMonitor.start(for: window) { [weak window] event in
             let events = calendarService.eventsByDay().flatMap(\.events)
             let keys = events.compactMap(\.alarmKey)
             let selected = selection.selectedKey.flatMap { key in events.first { $0.alarmKey == key } }
@@ -74,6 +74,9 @@ struct MenuBarContentView: View {
                 return nil
             case KeyCode.upArrow:
                 selection.move(by: -1, in: keys)
+                return nil
+            case KeyCode.escape where modifiers.isEmpty:
+                window?.close()
                 return nil
             case KeyCode.returnKey, KeyCode.keypadEnter:
                 guard let selected else { return event }

@@ -76,9 +76,9 @@ enum AlertService {
         return nil
     }
 
-    /// Plays the system "Ping" sound as the alarm notification audio.
-    static func playAlarmSound() {
-        NSSound(named: "Ping")?.play()
+    /// Plays the alert sound and volume chosen in Settings (Ping at full volume by default).
+    static func playAlarmSound(settings: SettingsStore) {
+        AlertSoundPlayer.play(settings: settings)
     }
 
     /// Opens a calendar event in Apple Calendar by creating a temporary .ics file with the event's UID.
@@ -314,7 +314,7 @@ extension AlertService {
         let mockEnd = now.addingTimeInterval(30 * 60)
 
         if settingsStore.soundEnabled {
-            playAlarmSound()
+            playAlarmSound(settings: settingsStore)
         }
 
         show(

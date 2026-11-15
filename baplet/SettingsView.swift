@@ -182,7 +182,6 @@ private struct AlertsPane: View {
                         Text(style.label).tag(style)
                     }
                 }
-                Toggle("Play sound on alert", isOn: $settings.soundEnabled)
                 LabeledContent("Alert before event") {
                     ValueStepper(value: $settings.minutesBefore, range: 1...60, unit: "min", pluralUnit: "min")
                 }
@@ -191,6 +190,10 @@ private struct AlertsPane: View {
                         AlertService.showTestAlert(settings: settingsStore)
                     }
                 }
+            }
+
+            Section("Sound") {
+                AlertSoundEditor()
             }
 
             Section {
@@ -213,6 +216,7 @@ private struct AlertsPane: View {
             }
         }
         .formStyle(.grouped)
+        .playsPickedAlertSound()
         .navigationTitle("Alerts")
     }
 }

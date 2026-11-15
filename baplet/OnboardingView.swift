@@ -13,7 +13,7 @@ import SwiftUI
 struct OnboardingView: View {
     /// The guide's pages, in order.
     enum Step: Int, CaseIterable {
-        case welcome, calendars, theme, workingHours, shortcut, finish
+        case welcome, calendars, theme, sound, workingHours, shortcut, finish
     }
 
     @Environment(SettingsStore.self) private var settingsStore
@@ -28,6 +28,7 @@ struct OnboardingView: View {
                 case .welcome: OnboardingWelcomeStep()
                 case .calendars: OnboardingCalendarsStep()
                 case .theme: OnboardingThemeStep()
+                case .sound: OnboardingSoundStep()
                 case .workingHours: OnboardingWorkingHoursStep()
                 case .shortcut: OnboardingShortcutStep(hasShortcut: $hasTodayShortcut)
                 case .finish: OnboardingFinishStep()
@@ -77,7 +78,7 @@ struct OnboardingView: View {
     private var primaryTitle: String {
         switch step {
         case .welcome: "Get Started"
-        case .calendars, .theme, .workingHours: "Next"
+        case .calendars, .theme, .sound, .workingHours: "Next"
         case .shortcut: hasTodayShortcut ? "Next" : "Skip for Now"
         case .finish: "Finish"
         }
@@ -359,7 +360,29 @@ struct AlertStylePreview: View {
     )
 }
 
-/// Step 4 (optional): working hours, so meetings in the evening or at the weekend stay quiet.
+/// Step 4: the alert sound and its volume, from a soft hint to loud ringing.
+private struct OnboardingSoundStep: View {
+    /// Shows the question, the shared sound rows (picking a sound plays it) and where to
+    /// change it later.
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Pick an alert sound")
+                .font(.title2)
+                .fontWeight(.bold)
+            SettingsHelpText("Choose how your alerts sound, from a soft hint to loud ringing. Pick one to hear it, and set how loud it plays.")
+            Form {
+                AlertSoundEditor()
+            }
+            .formStyle(.grouped)
+            .scrollDisabled(true)
+            .frame(height: 160)
+            .playsPickedAlertSound()
+            SettingsHelpText("You can change this any time in Settings → Alerts.")
+        }
+    }
+}
+
+/// Step 5 (optional): working hours, so meetings in the evening or at the weekend stay quiet.
 private struct OnboardingWorkingHoursStep: View {
     /// Shows the question with the watch fish, the shared working hours rows and where to
     /// change them later.
@@ -389,7 +412,7 @@ private struct OnboardingWorkingHoursStep: View {
     }
 }
 
-/// Step 5 (optional): record the global shortcut for the Today list. The primary button reads
+/// Step 6 (optional): record the global shortcut for the Today list. The primary button reads
 /// "Skip for Now" until a shortcut is recorded.
 private struct OnboardingShortcutStep: View {
     @Binding var hasShortcut: Bool
@@ -413,7 +436,7 @@ private struct OnboardingShortcutStep: View {
     }
 }
 
-/// Step 6: where to find Baplet from now on.
+/// Step 7: where to find Baplet from now on.
 private struct OnboardingFinishStep: View {
     var body: some View {
         VStack(spacing: 18) {
