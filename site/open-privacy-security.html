@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Open Privacy & Security — Baplet</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><img src="assets/logo.svg" alt="" width="28" height="28"> Baplet</a>
+    <nav class="topbar-nav">
+      <a class="topbar-link" href="docs.html">Docs</a>
+      <a class="topbar-link" href="https://github.com/konkord-io/baplet">GitHub</a>
+      <a class="topbar-link topbar-sponsor" href="https://github.com/sponsors/lazee">♥ Sponsor</a>
+    </nav>
+  </header>
+
+  <main class="docs open-settings">
+    <h1 class="docs-title">Allow Baplet to open</h1>
+    <p class="docs-lede">Your browser may ask to open System Settings. Allow it, and Privacy &amp; Security opens.</p>
+    <p><a id="open-settings" class="button" href="x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension">Open Privacy &amp; Security</a></p>
+    <ol>
+      <li>Open Baplet once from your Applications folder first. macOS blocks it and says it can't verify the developer: click <strong>Done</strong>.</li>
+      <li>In <strong>Privacy &amp; Security</strong>, scroll down to the message about Baplet and click <strong>Open Anyway</strong>.</li>
+      <li>Confirm with your password or Touch ID. Baplet opens, and you never have to do this again.</li>
+    </ol>
+    <p class="docs-note">The Open Anyway button only appears after you've tried to open Baplet once. More help: <a href="docs.html#install">installing Baplet</a>.</p>
+  </main>
+
+  <script>
+    window.location.href = document.getElementById("open-settings").href;
+  </script>
+</body>
+</html>

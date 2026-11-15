@@ -280,3 +280,9 @@ kbd {
 .settings-list dd { margin: 2px 0 0; color: var(--muted); }
 
 .install-link { text-align: center; color: var(--muted); padding-bottom: 56px; }
+
+.topbar-sponsor { color: var(--accent); font-weight: 600; }
+.topbar-sponsor:hover { color: var(--accent); text-decoration: underline; }
+.why .sponsor-note { margin-top: 10px; }
+
+.open-settings .button { margin: 8px 0 24px; }

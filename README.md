@@ -8,6 +8,8 @@ A macOS menu bar app that keeps you on top of your calendar events with customiz
 
 **[⬇ Download Baplet for macOS](https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg)** (macOS 26.3+, free) · [website](https://baplet.konkord.io) · [docs](https://baplet.konkord.io/docs) · [all releases](https://github.com/konkord-io/baplet/releases)
 
+Baplet is free. If it helps you, [sponsor it on GitHub](https://github.com/sponsors/lazee): it helps pay Apple's yearly developer fee, so Baplet can one day open without the Open Anyway step.
+
 > Baplet isn't signed by Apple, so macOS blocks it the first time you open it. After dragging it to Applications, open **System Settings → Privacy & Security** and click **Open Anyway** next to Baplet (or run `xattr -dr com.apple.quarantine /Applications/Baplet.app`). You only do this once: later versions install from inside Baplet via **Settings → About → Check for Updates**.
 
 ## Features

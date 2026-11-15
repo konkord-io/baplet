@@ -97,11 +97,7 @@ dmg: ## Build a release DMG (VERSION=1.2.3 BUILD_NUMBER=n; SIGN_IDENTITY=<sha1> 
 		fi; \
 		echo "Signed with the release certificate ($(SIGN_IDENTITY))."; \
 	fi
-	@rm -rf build/dmg-staging && mkdir -p build/dmg-staging
-	@cp -R $(DERIVED)/Build/Products/Release/Baplet.app build/dmg-staging/
-	@ln -s /Applications build/dmg-staging/Applications
-	@hdiutil create -quiet -volname "Baplet $(VERSION)" -srcfolder build/dmg-staging -ov -format UDZO $(DMG)
-	@rm -rf build/dmg-staging
+	@scripts/dmg/build-dmg.sh "$(VERSION)" "$(DERIVED)/Build/Products/Release/Baplet.app" "$(DMG)"
 	@echo "Created $(DMG) ($$(du -h $(DMG) | cut -f1))."
 
 stop: ## Quit the running app
