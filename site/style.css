@@ -224,23 +224,8 @@ footer a:hover { color: var(--text); }
 
 .docs { max-width: 820px; padding-bottom: 56px; }
 .docs-title { font-size: clamp(36px, 6vw, 52px); margin: 16px 0 4px; }
-.docs-lede { color: var(--muted); font-size: 19px; margin: 0 0 20px; }
+.docs-lede { color: var(--muted); font-size: 19px; margin: 0 0 40px; }
 
-.toc {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 40px;
-}
-.toc a {
-  padding: 6px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--card);
-  font-size: 15px;
-  text-decoration: none;
-}
-.toc a:hover { border-color: var(--accent); }
 
 .docs section { margin-bottom: 48px; scroll-margin-top: 16px; }
 .docs h2 {
