@@ -113,7 +113,7 @@ private struct OnboardingWelcomeStep: View {
             Text("Hi, welcome to Baplet")
                 .font(.largeTitle)
                 .fontWeight(.bold)
-            Text("For people who keep getting distracted. Baplet taps you on the shoulder before every meeting, so you never miss one again.")
+            Text("Stay focused. Join meetings on time. The little reminder in the corner is easy to miss when you're deep in work, or buried under Slack and mail. Baplet makes sure your next meeting isn't.")
                 .font(.title3)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
