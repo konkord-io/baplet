@@ -6,7 +6,7 @@ A macOS menu bar app that keeps you on top of your calendar events with customiz
   <img src="design/baplet.svg" width="128" height="128" alt="Baplet logo">
 </p>
 
-**[⬇ Download Baplet for macOS](https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg)** (macOS 26.3+, free) · [website](https://baplet.konkord.io) · [docs](https://baplet.konkord.io/docs) · [all releases](https://github.com/konkord-io/baplet/releases)
+**[⬇ Download Baplet for macOS](https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg)** (macOS 26.3+, free) · or `brew install konkord-io/tap/baplet` · [website](https://baplet.konkord.io) · [docs](https://baplet.konkord.io/docs) · [all releases](https://github.com/konkord-io/baplet/releases)
 
 Baplet is free. If it helps you, [sponsor it on GitHub](https://github.com/sponsors/lazee): it helps pay Apple's yearly developer fee, so Baplet can one day open without the Open Anyway step.
 
@@ -91,6 +91,15 @@ Once a release is published, don't reuse its version: ship the fix as the next p
    ```
 4. Allow calendar access when Baplet asks.
 
+With Homebrew instead of the DMG (Homebrew 7 asks you to trust the tap first; the Open Anyway step above still applies):
+
+```sh
+brew trust konkord-io/tap
+brew install konkord-io/tap/baplet
+```
+
+The cask lives in [konkord-io/homebrew-tap](https://github.com/konkord-io/homebrew-tap). Publishing a release runs `.github/workflows/homebrew.yml`, which updates its version and SHA-256 using the `HOMEBREW_TAP_TOKEN` secret (a fine-grained token with Contents read and write on the tap). Baplet updates itself, so the cask is marked `auto_updates` and `brew upgrade` leaves it alone.
+
 After that, Baplet keeps itself up to date: it checks GitHub daily (or via **Settings → About → Check for Updates**), shows **Update available** in the menu, and **Install & Restart** downloads the new DMG, verifies its SHA-256 against the checksum GitHub publishes, swaps the app and relaunches, with no Open Anyway step. A version downloaded by hand from the website still needs Open Anyway.
 
 ### Signing
@@ -103,7 +112,7 @@ Baplet is free software, so it isn't signed with a paid Apple Developer ID. Rele
 | Calendar permission after updates  | Kept, because every release is signed with the same certificate |
 | Updates                            | In-app (Check for Updates), no Open Anyway                      |
 
-`release.yml` imports the certificate from the repository secrets `MACOS_SIGNING_P12_BASE64` and `MACOS_SIGNING_P12_PASSWORD` and refuses to release without them. `make dmg` signs with it when `SIGN_IDENTITY` is set and checks the result; without it, the DMG is ad-hoc signed for local tries. The certificate must never be replaced: a new one makes macOS ask every user for calendar access again.
+`release.yml` imports the certificate from the repository secrets `MACOS_SIGNING_P12_BASE64` and `MACOS_SIGNING_P12_PASSWORD` and refuses to release without them. `make dmg` signs with it when `SIGN_IDENTITY` is set and checks the result; without it, the DMG is ad-hoc signed for local tries. The certificate must never be replaced: a new one makes macOS ask every user for calendar access again. Its SHA-1 fingerprint is `476a66de31db738a85b5e21719b82752ca256184`; anyone can check a copy with `codesign --verify --deep --strict /Applications/Baplet.app` and `codesign -d -r- /Applications/Baplet.app` (it must show `certificate root = H"476a66de…"`), as the docs page's "Verify your download" section explains.
 
 ## License
 
