@@ -14,7 +14,10 @@
 <body>
   <header class="topbar">
     <a class="brand" href="./"><img src="assets/logo.svg" alt="" width="28" height="28"> Baplet</a>
-    <a class="topbar-link" href="https://github.com/konkord-io/baplet">GitHub</a>
+    <nav class="topbar-nav">
+      <a class="topbar-link" href="docs.html">Docs</a>
+      <a class="topbar-link" href="https://github.com/konkord-io/baplet">GitHub</a>
+    </nav>
   </header>
 
   <main>
@@ -27,7 +30,7 @@
         <a class="button" href="https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg">Download for macOS</a>
         <span class="cta-note">Free · macOS 26.3 or later · <a href="https://github.com/konkord-io/baplet/releases">all versions</a></span>
       </div>
-      <p class="notice"><strong>Heads-up:</strong> Baplet isn't signed by Apple yet, so macOS warns you the first time you open it. It takes one extra step — <a href="#install">see how to install</a>.</p>
+      <p class="notice"><strong>Heads-up:</strong> Baplet isn't signed by Apple yet, so macOS warns you the first time you open it. It takes one extra step — <a href="docs.html#install">see how to install</a>.</p>
     </section>
 
     <section class="features" aria-label="Features">
@@ -69,26 +72,7 @@
       </article>
     </section>
 
-    <section class="install" id="install">
-      <div class="install-head">
-        <img class="fish" src="assets/fish.webp" alt="Baplet's goldfish mascot in a Baplet T-shirt" width="220" height="147">
-        <div>
-          <h2>Installing</h2>
-          <div class="why">
-        <h3>Why does macOS warn about Baplet?</h3>
-        <p>Apple only lets apps open without a warning when they're signed with a paid Apple Developer ID and checked ("notarized") by Apple. Baplet is an early, free project and isn't signed that way yet, so macOS can't confirm who made it and blocks it until you allow it. Nothing is wrong with the download: Baplet is open source, so you can <a href="https://github.com/konkord-io/baplet">read every line of its code</a>. Signed builds will come later, and then this extra step goes away.</p>
-          </div>
-        </div>
-      </div>
-      <ol>
-        <li>Open the downloaded <code>Baplet.dmg</code> and drag <strong>Baplet</strong> to <strong>Applications</strong>.</li>
-        <li>Start Baplet. macOS says it can't verify the developer. Click <strong>Done</strong> (not Move to Bin).</li>
-        <li>Open <strong>System Settings → Privacy &amp; Security</strong>, scroll down to the message about Baplet, click <strong>Open Anyway</strong> and confirm with your password or Touch ID.</li>
-        <li>Allow calendar access, and the welcome guide takes it from there.</li>
-      </ol>
-      <p class="install-alt">Prefer Terminal? <code>xattr -dr com.apple.quarantine /Applications/Baplet.app</code> does the same as steps 2–3.</p>
-      <p class="install-alt">Updating? Use <strong>Check for Updates</strong> in Baplet's Settings → About, or click <strong>Update available</strong> at the bottom of the menu: Baplet downloads, verifies and installs the new version itself, with no Open Anyway step. macOS asks for calendar access again after an update. (Right-click → Open no longer skips the first-launch warning on recent macOS versions.)</p>
-    </section>
+    <p class="install-link" id="install">New to Baplet? The <a href="docs.html">docs</a> cover <a href="docs.html#install">installing</a>, the keyboard shortcuts, the settings and <a href="docs.html#updating">updating</a>.</p>
   </main>
 
   <footer>
