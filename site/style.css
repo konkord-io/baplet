@@ -203,9 +203,21 @@ footer a:hover { color: var(--text); }
 }
 .section-head .fish { grid-column: 2; grid-row: 1; width: 220px; height: auto; }
 .section-head .fish--card { border-radius: 14px; border: 1px solid var(--line); }
-@media (max-width: 640px) {
-  .section-head { grid-template-columns: 1fr; }
-  .section-head .fish { grid-column: 1; justify-self: center; width: 150px; }
+.section-head--flip { grid-template-columns: 220px 1fr; }
+.section-head--flip .fish { grid-column: 1; }
+.section-head--flip > div { grid-column: 2; grid-row: 1; }
+@media (max-width: 760px) {
+  .section-head { grid-template-columns: 1fr 130px; gap: 8px 18px; }
+  .section-head--flip { grid-template-columns: 130px 1fr; }
+  .section-head .fish { width: 130px; }
+}
+@media (max-width: 460px) {
+  .section-head,
+  .section-head--flip { grid-template-columns: 1fr; }
+  .section-head .fish,
+  .section-head--flip .fish { grid-column: 1; grid-row: 1; justify-self: center; width: 150px; }
+  .section-head > div,
+  .section-head--flip > div { grid-column: 1; grid-row: 2; }
 }
 
 .topbar-nav { display: flex; gap: 20px; }
