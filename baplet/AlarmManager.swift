@@ -144,7 +144,7 @@ final class AlarmManager {
 
         if activeAlarmKey != nil {
             if replaySound, settingsStore.soundEnabled {
-                AlertService.playAlarmSound()
+                AlertService.playAlarmSound(settings: settingsStore)
             }
             return
         }
@@ -174,7 +174,7 @@ final class AlarmManager {
         snoozedAlarms.removeValue(forKey: key)
 
         if settingsStore.soundEnabled {
-            AlertService.playAlarmSound()
+            AlertService.playAlarmSound(settings: settingsStore)
         }
 
         let meetingLink = AlertService.extractMeetingLink(from: event)

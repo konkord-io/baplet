@@ -94,6 +94,16 @@ final class SettingsStore {
         didSet { defaults.set(soundEnabled, forKey: Keys.soundEnabled) }
     }
 
+    /// Which sound alerts play when sound is on.
+    var alertSound: AlertSound {
+        didSet { defaults.set(alertSound.rawValue, forKey: Keys.alertSound) }
+    }
+
+    /// Volume of alert sounds from 0 to 1, relative to the Mac's own volume.
+    var alertVolume: Double {
+        didSet { defaults.set(alertVolume, forKey: Keys.alertVolume) }
+    }
+
     /// Whether alarm notifications are temporarily paused.
     var alarmsPaused: Bool {
         didSet { defaults.set(alarmsPaused, forKey: Keys.alarmsPaused) }
@@ -183,6 +193,8 @@ final class SettingsStore {
         /// Legacy key kept for migration from older versions.
         static let legacyAlertType = "alertType"
         static let soundEnabled = "soundEnabled"
+        static let alertSound = "alertSound"
+        static let alertVolume = "alertVolume"
         static let alarmsPaused = "alarmsPaused"
         static let minutesBefore = "minutesBefore"
         static let daysToShow = "daysToShow"
@@ -230,6 +242,8 @@ final class SettingsStore {
         }
 
         self.soundEnabled = defaults.object(forKey: Keys.soundEnabled) as? Bool ?? true
+        self.alertSound = defaults.string(forKey: Keys.alertSound).flatMap(AlertSound.init(rawValue:)) ?? AlertSound.defaultSound
+        self.alertVolume = defaults.object(forKey: Keys.alertVolume) as? Double ?? 1
         self.alarmsPaused = defaults.bool(forKey: Keys.alarmsPaused)
 
         let storedMinutesBefore = defaults.integer(forKey: Keys.minutesBefore)
