@@ -59,7 +59,7 @@ Run `/release` (`.claude/skills/release/SKILL.md`) for the step-by-step routine.
 - **Session-start check:** at the start of a session, before other work, compare the site with reality and report any drift to the user (don't fix it silently):
   1. The latest release: `gh release view --repo konkord-io/baplet --json tagName,publishedAt`. Note when there is none, since the Download button then 404s.
   2. "macOS 26.3 or later" on the site and README against `MACOSX_DEPLOYMENT_TARGET` in `project.pbxproj`.
-  3. The "not signed by Apple yet" notice and the install steps (in `site/docs.html`) against how `release.yml` signs. Once Developer ID + notarization is in, they must go.
+  3. The "not signed by Apple yet" text and the install steps in `site/docs.html` (and the README) against how `release.yml` signs. Once Developer ID + notarization is in, they must go.
   4. The four feature tiles against the features merged since the site last changed (`git log --oneline -- site/` against `git log --oneline main`).
 
 ## Conventions
