@@ -202,7 +202,6 @@ footer a:hover { color: var(--text); }
   align-items: center;
 }
 .section-head .fish { grid-column: 2; grid-row: 1; width: 220px; height: auto; }
-.section-head .fish--card { border-radius: 14px; border: 1px solid var(--line); }
 .section-head--flip { grid-template-columns: 220px 1fr; }
 .section-head--flip .fish { grid-column: 1; }
 .section-head--flip > div { grid-column: 2; grid-row: 1; }
