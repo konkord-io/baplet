@@ -64,6 +64,47 @@ enum BrowserService {
         "org.mozilla.nightly",
     ]
 
+    /// Bundle identifiers of the web browsers offered in Settings → Meetings: the ones Baplet
+    /// can pick profiles in, plus other common browsers. Other apps that register for web
+    /// links (ChatGPT, Parallels, terminals, editors) are left out on purpose.
+    private static let knownBrowserBundleIDs: Set<String> = Set(chromiumSupportFolders.keys)
+        .union(firefoxBundleIDs)
+        .union([
+            "com.apple.Safari",
+            "com.apple.SafariTechnologyPreview",
+            "com.microsoft.edgemac.Canary",
+            "com.brave.Browser.beta",
+            "com.brave.Browser.nightly",
+            "com.operasoftware.Opera",
+            "com.operasoftware.OperaGX",
+            "company.thebrowser.Browser",
+            "company.thebrowser.dia",
+            "com.kagi.kagimacOS",
+            "com.duckduckgo.macos.browser",
+            "app.zen-browser.zen",
+            "org.torproject.torbrowser",
+        ])
+
+    /// Folders that hold normally installed apps. Copies elsewhere (browsers downloaded by test
+    /// tools into caches, apps shared from a Parallels virtual machine) are not offered.
+    /// Safari lives in the system's cryptex volume.
+    private static func appFolders(homeDirectory: String) -> [String] {
+        [
+            "/Applications/",
+            "\(homeDirectory)/Applications/",
+            "/System/Applications/",
+            "/System/Volumes/Preboot/Cryptexes/App/System/Applications/",
+        ]
+    }
+
+    /// Whether an app found by Launch Services belongs in the browser list: a known web
+    /// browser installed in one of the normal app folders. Takes the home folder as a
+    /// parameter so the rule can be tested.
+    static func isOfferedBrowser(bundleID: String, appPath: String, homeDirectory: String) -> Bool {
+        guard knownBrowserBundleIDs.contains(bundleID) else { return false }
+        return appFolders(homeDirectory: homeDirectory).contains { appPath.hasPrefix($0) }
+    }
+
     /// The user's real `~/Library/Application Support` folder.
     private static var applicationSupport: URL {
         FileManager.default.homeDirectoryForCurrentUser
@@ -81,16 +122,19 @@ enum BrowserService {
         return nil
     }
 
-    /// Lists every installed app registered to open `https` links, one entry per bundle
-    /// identifier, sorted by name. Baplet itself is excluded.
-    static func installedBrowsers() -> [Browser] {
+    /// Lists the installed web browsers (see `isOfferedBrowser`) registered to open `https`
+    /// links, one entry per bundle identifier, sorted by name. The browser in `keeping` (the
+    /// one already chosen) is listed even when the filter would leave it out, so an existing
+    /// choice never silently disappears from the picker.
+    static func installedBrowsers(keeping selectedID: String? = nil) -> [Browser] {
         guard let probe = URL(string: "https://example.com") else { return [] }
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
         var seen = Set<String>()
         var browsers: [Browser] = []
         for appURL in NSWorkspace.shared.urlsForApplications(toOpen: probe) {
             guard let bundle = Bundle(url: appURL),
                   let bundleID = bundle.bundleIdentifier,
-                  bundleID != Bundle.main.bundleIdentifier,
+                  bundleID == selectedID || isOfferedBrowser(bundleID: bundleID, appPath: appURL.path, homeDirectory: home),
                   seen.insert(bundleID).inserted else { continue }
             let name = FileManager.default.displayName(atPath: appURL.path)
                 .replacingOccurrences(of: ".app", with: "")

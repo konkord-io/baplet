@@ -133,4 +133,25 @@ struct BrowserServiceTests {
         }
         #expect(BrowserService.profileFamily(forBundleID: "com.apple.Safari") == nil)
     }
+
+    /// Checks that known browsers in the normal app folders are offered, including Safari in
+    /// the system's cryptex volume and apps in ~/Applications.
+    @Test
+    func offersKnownBrowsersInAppFolders() {
+        let home = "/Users/test"
+        #expect(BrowserService.isOfferedBrowser(bundleID: "com.google.Chrome", appPath: "/Applications/Google Chrome.app", homeDirectory: home))
+        #expect(BrowserService.isOfferedBrowser(bundleID: "com.apple.Safari", appPath: "/System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari.app", homeDirectory: home))
+        #expect(BrowserService.isOfferedBrowser(bundleID: "com.brave.Browser", appPath: "/Users/test/Applications/Brave Browser.app", homeDirectory: home))
+    }
+
+    /// Checks that apps that only register for web links, and browser copies outside the app
+    /// folders (test-tool caches, Parallels shares), are left out.
+    @Test
+    func skipsNonBrowsersAndStrayCopies() {
+        let home = "/Users/test"
+        #expect(!BrowserService.isOfferedBrowser(bundleID: "com.openai.chat", appPath: "/Applications/ChatGPT.app", homeDirectory: home))
+        #expect(!BrowserService.isOfferedBrowser(bundleID: "com.googlecode.iterm2", appPath: "/Applications/iTerm.app", homeDirectory: home))
+        #expect(!BrowserService.isOfferedBrowser(bundleID: "org.mozilla.nightly", appPath: "/Users/test/Library/Caches/ms-playwright/firefox-1572/firefox/Nightly.app", homeDirectory: home))
+        #expect(!BrowserService.isOfferedBrowser(bundleID: "com.microsoft.edgemac", appPath: "/Users/test/Applications (Parallels)/{id} Applications.localized/Microsoft Edge.app", homeDirectory: home))
+    }
 }

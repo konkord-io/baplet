@@ -264,7 +264,7 @@ private struct MeetingsPane: View {
         .formStyle(.grouped)
         .navigationTitle("Meetings")
         .onAppear {
-            browsers = BrowserService.installedBrowsers()
+            browsers = BrowserService.installedBrowsers(keeping: settingsStore.meetingBrowserID)
             loadProfiles()
         }
         .onChange(of: settingsStore.meetingBrowserID) {
