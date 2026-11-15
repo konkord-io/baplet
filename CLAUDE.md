@@ -55,11 +55,11 @@ Run `/release` (`.claude/skills/release/SKILL.md`) for the step-by-step routine.
 
 `site/` is the public site `baplet.konkord.io`, deployed by `.github/workflows/pages.yml` when `site/` changes on main. Its Download button and the README's download link point at `releases/latest/download/Baplet.dmg`, so the version follows releases automatically. Everything else on the site is hand-written and drifts unless kept in step.
 
-- **Same PR rule:** a change users can notice also updates `site/index.html` and the README in the same PR. That covers a feature added, removed or renamed; the macOS requirement; install steps; and signing or notarization status.
+- **Same PR rule:** a change users can notice also updates `site/index.html`, the docs page `site/docs.html` (install, how it works, keyboard shortcuts, settings, updating) and the README in the same PR. That covers a feature added, removed or renamed; the macOS requirement; install steps; and signing or notarization status.
 - **Session-start check:** at the start of a session, before other work, compare the site with reality and report any drift to the user (don't fix it silently):
   1. The latest release: `gh release view --repo konkord-io/baplet --json tagName,publishedAt`. Note when there is none, since the Download button then 404s.
   2. "macOS 26.3 or later" on the site and README against `MACOSX_DEPLOYMENT_TARGET` in `project.pbxproj`.
-  3. The "not signed by Apple yet" notice and install steps against how `release.yml` signs. Once Developer ID + notarization is in, they must go.
+  3. The "not signed by Apple yet" text and the install steps in `site/docs.html` (and the README) against how `release.yml` signs. Once Developer ID + notarization is in, they must go.
   4. The four feature tiles against the features merged since the site last changed (`git log --oneline -- site/` against `git log --oneline main`).
 
 ## Conventions

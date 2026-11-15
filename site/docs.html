@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Baplet docs — install, use and update</title>
+  <meta name="description" content="How to install Baplet, how its meeting alarms work, its keyboard shortcuts and settings, and how to update it.">
+  <meta property="og:title" content="Baplet docs — install, use and update">
+  <meta property="og:description" content="How to install Baplet, how its meeting alarms work, its keyboard shortcuts and settings, and how to update it.">
+  <meta property="og:image" content="https://baplet.konkord.io/assets/goldfish.webp">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><img src="assets/logo.svg" alt="" width="28" height="28"> Baplet</a>
+    <nav class="topbar-nav">
+      <a class="topbar-link" href="docs.html" aria-current="page">Docs</a>
+      <a class="topbar-link" href="https://github.com/konkord-io/baplet">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="docs">
+    <h1 class="docs-title">Baplet docs</h1>
+    <p class="docs-lede">Everything you need to get Baplet running and make the most of it.</p>
+
+
+    <section id="install">
+      <div class="section-head">
+        <img class="fish" src="assets/fish_muscles.webp" alt="Baplet's goldfish flexing its fins, ready to go" width="220" height="147">
+        <div>
+          <h2>Installing</h2>
+          <p>Baplet needs macOS 26.3 or later. <a href="https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg">Download Baplet.dmg</a>, then:</p>
+        </div>
+      </div>
+      <ol>
+        <li>Open the downloaded <code>Baplet.dmg</code> and drag <strong>Baplet</strong> to <strong>Applications</strong>.</li>
+        <li>Start Baplet. macOS says it can't verify the developer. Click <strong>Done</strong> (not Move to Bin).</li>
+        <li>Open <strong>System Settings → Privacy &amp; Security</strong>, scroll down to the message about Baplet, click <strong>Open Anyway</strong> and confirm with your password or Touch ID.</li>
+        <li>Allow calendar access, and the welcome guide takes it from there.</li>
+      </ol>
+      <p class="docs-note">Prefer Terminal? <code>xattr -dr com.apple.quarantine /Applications/Baplet.app</code> does the same as steps 2–3. (Right-click → Open no longer skips the first-launch warning on recent macOS versions.)</p>
+      <div class="why">
+        <h3>Why does macOS warn about Baplet?</h3>
+        <p>Apple only lets apps open without a warning when they're signed with a paid Apple Developer ID and checked ("notarized") by Apple. Baplet is an early, free project and isn't signed that way yet, so macOS can't confirm who made it and blocks it until you allow it. Nothing is wrong with the download: Baplet is open source, so you can <a href="https://github.com/konkord-io/baplet">read every line of its code</a>. Signed builds will come later, and then this extra step goes away.</p>
+      </div>
+    </section>
+
+    <section id="how-it-works">
+      <div class="section-head section-head--flip">
+        <img class="fish" src="assets/fish_stressed.webp" alt="Baplet's goldfish looking stressed, surrounded by calendar pages" width="220" height="147" loading="lazy">
+        <div>
+          <h2>How it works</h2>
+          <p>Baplet watches your calendar and puts an alert in front of you a few minutes before each meeting.</p>
+        </div>
+      </div>
+      <p>Baplet reads your events from the macOS Calendar app, so it works with every account you've added there: iCloud, Google, Exchange and others. Pick which calendars it watches in Settings → Calendars. Your calendar data stays on your Mac; Baplet only contacts GitHub to check for updates.</p>
+      <p>A few minutes before a meeting starts (5 by default), Baplet puts an alert in front of you: a popup or a full-screen alert, in the style you choose, with an optional sound. The alert stays until you deal with it, and the sound repeats while it's open:</p>
+      <ul>
+        <li><strong>Open</strong> joins the meeting in your chosen browser, or opens the event in Calendar when it has no meeting link. Baplet recognises Google Meet, Zoom, Teams, Webex, GoTo Meeting and Slack huddles.</li>
+        <li><strong>Snooze</strong> brings the alert back after 1 to 30 minutes. Closing the alert with its close button snoozes it for 5 minutes, so a meeting is never dropped by accident.</li>
+        <li><strong>Dismiss</strong> stops the alert for that meeting.</li>
+      </ul>
+      <p>Only one alert is on screen at a time. If two meetings are due together, the next one shows as soon as you've dealt with the first.</p>
+      <p>Baplet runs while you're logged in and your Mac is awake. It can't reach you on your phone or watch, and it doesn't need to: it's for the moments you're at your desk and deep in something.</p>
+    </section>
+
+    <section id="usage">
+      <div class="section-head">
+        <img class="fish" src="assets/fish_clock.webp" alt="Baplet's goldfish pointing at its watch" width="220" height="147" loading="lazy">
+        <div>
+          <h2>Using Baplet</h2>
+          <p>The menu bar, the menu and today's events: where to find what.</p>
+        </div>
+      </div>
+      <figure class="docs-shot docs-shot--right">
+        <img src="assets/screenshots/menu-dark.webp" alt="The Baplet menu listing today's and tomorrow's meetings" loading="lazy">
+      </figure>
+      <h3>The menu bar</h3>
+      <p>Baplet lives in the menu bar and has no Dock icon. A few minutes before a meeting the icon shows a countdown (for example <strong>3m</strong>), and <strong>NOW</strong> while a meeting is on. A faded icon means alarms are paused.</p>
+      <h3>The menu</h3>
+      <p>Click the icon to see your upcoming events, grouped by day. Click an event to open it in Calendar, the camera button to join its meeting, and the checkbox to switch the alarm off for just that occurrence. The buttons at the top refresh the list, open today's events, pause or resume all alarms, open Settings and quit Baplet.</p>
+      <h3 class="docs-clear">Today's events</h3>
+      <figure class="docs-shot docs-shot--right">
+        <img src="assets/screenshots/today-dark.webp" alt="The Today panel listing the day's meetings with the stand-up selected" loading="lazy">
+      </figure>
+      <p>A Spotlight-like panel with what's left of your day. Open it from the button in the menu, or from any app with your own shortcut (set it in Settings → Shortcuts; there's no default). Pick a meeting with the arrow keys and press Return to join it. Press the shortcut again, or Escape, to close it.</p>
+    </section>
+
+    <section id="shortcuts" class="docs-clear">
+      <h2>Keyboard shortcuts</h2>
+      <h3>In an alert</h3>
+      <table class="keys">
+        <tr><td><kbd>O</kbd> or <kbd>Return</kbd></td><td>Open: join the meeting, or open the event in Calendar</td></tr>
+        <tr><td><kbd>S</kbd></td><td>Snooze for 5 minutes</td></tr>
+        <tr><td><kbd>D</kbd></td><td>Dismiss</td></tr>
+      </table>
+      <p class="docs-note">The keys only respond after the alert has been up for a second, so keys you were already typing in another app don't trigger anything.</p>
+      <h3>In the menu and in today's events</h3>
+      <table class="keys">
+        <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Select an event (in the menu, the first press selects the next meeting)</td></tr>
+        <tr><td><kbd>Return</kbd></td><td>Join the meeting, or open it in Calendar: you choose which in Settings → Shortcuts</td></tr>
+        <tr><td><kbd>⌘</kbd> <kbd>Return</kbd></td><td>Do the other one</td></tr>
+        <tr><td><kbd>D</kbd></td><td>Switch the alarm for the selected event on or off</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close today's events</td></tr>
+      </table>
+      <h3>Anywhere</h3>
+      <table class="keys">
+        <tr><td>Your shortcut</td><td>Show or hide today's events (set in Settings → Shortcuts)</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close the Settings window</td></tr>
+      </table>
+    </section>
+
+    <section id="settings">
+      <h2>Settings</h2>
+      <p>Open Settings from the gear button in the menu.</p>
+      <dl class="settings-list">
+        <dt>Calendars</dt>
+        <dd>Which calendars Baplet watches. Events from these appear in the menu and can trigger alerts.</dd>
+        <dt>Alerts</dt>
+        <dd>The alert style (Popup Dialog, Glassmorphic, Bold &amp; Minimal or Warm &amp; Playful), sound on or off, how many minutes before a meeting to alert (1–60), a Test Alert button, and how many days of events the menu shows (1–14).</dd>
+        <dt>Meetings</dt>
+        <dd>The browser that opens meeting links, and for Chrome, Edge, Brave, Vivaldi and Firefox which profile, so work meetings open in your work profile.</dd>
+        <dt>Shortcuts</dt>
+        <dd>The global shortcut for today's events, and what Return does in the lists: join the meeting or open it in Calendar.</dd>
+        <dt>About</dt>
+        <dd>Version, license, the welcome guide again, and updates.</dd>
+      </dl>
+    </section>
+
+    <section id="updating">
+      <div class="section-head section-head--flip">
+        <img class="fish" src="assets/fish.webp" alt="Baplet's goldfish mascot in a Baplet T-shirt" width="220" height="147" loading="lazy">
+        <div>
+          <h2>Updating</h2>
+          <p>New versions install from inside Baplet.</p>
+        </div>
+      </div>
+      <p>Baplet checks for a new version once a day (you can turn that off in Settings → About). When one is out, <strong>Update available</strong> appears at the bottom of the menu. You can also check yourself with <strong>Check for Updates</strong> in Settings → About.</p>
+      <p><strong>Install &amp; Restart</strong> downloads the new version, checks it against the checksum published with the release, replaces the app and starts it again. There's no Open Anyway step for updates. macOS asks for calendar access again after each update.</p>
+      <p class="docs-note">When Baplet can't replace itself (for example when it runs from the disk image or from a folder you can't write to), you get <strong>Download Manually</strong> instead: install the new version the same way as the first time. Version 0.1.0 has no updater, so anyone on it needs to download a newer version by hand once.</p>
+    </section>
+  </main>
+
+  <footer>
+    <a href="https://github.com/konkord-io/baplet">Source on GitHub</a>
+    <span>·</span>
+    <a href="https://github.com/konkord-io/baplet/blob/main/LICENSE">MIT License</a>
+    <span>·</span>
+    <span>© 2026 Jakob Vad Nielsen</span>
+  </footer>
+</body>
+</html>
