@@ -5,6 +5,7 @@
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //
 
+import AppKit
 import EventKit
 import SwiftUI
 
@@ -22,6 +23,15 @@ struct MenuBarContentView: View {
     /// giving visible feedback for a reload that otherwise completes instantly.
     @State private var refreshCount = 0
 
+    /// Keyboard selection in the event list; empty until the first arrow key or pointer move.
+    @State private var selection = EventListSelection()
+
+    /// Watches keys typed into the menu window: ↑/↓, Return / ⌘Return and D, as in Today.
+    @State private var keyMonitor = PanelKeyMonitor()
+
+    /// The menu's window, found by `WindowReader`; its losing key status means the menu closed.
+    @State private var menuWindow: NSWindow?
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -34,6 +44,55 @@ struct MenuBarContentView: View {
             }
         }
         .frame(width: 420)
+        .background(WindowReader { installKeyHandling(for: $0) })
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { note in
+            if let menuWindow, note.object as? NSWindow === menuWindow {
+                selection.reset()
+            }
+        }
+    }
+
+    /// Handles the menu's keys like the Today panel's: ↑/↓ select an event, Return does the
+    /// Settings → Shortcuts action and ⌘Return the other one, D switches the selected event's
+    /// alarm. Return and D pass through while nothing is selected. The handler only reads
+    /// reference types, so it sees fresh events and settings although it is installed once.
+    private func installKeyHandling(for window: NSWindow) {
+        guard menuWindow !== window else { return }
+        menuWindow = window
+        let calendarService = calendarService
+        let settingsStore = settingsStore
+        let selection = selection
+        keyMonitor.start(for: window) { event in
+            let events = calendarService.eventsByDay().flatMap(\.events)
+            let keys = events.compactMap(\.alarmKey)
+            let selected = selection.selectedKey.flatMap { key in events.first { $0.alarmKey == key } }
+            let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
+
+            switch event.keyCode {
+            case KeyCode.downArrow:
+                selection.move(by: 1, in: keys)
+                return nil
+            case KeyCode.upArrow:
+                selection.move(by: -1, in: keys)
+                return nil
+            case KeyCode.returnKey, KeyCode.keypadEnter:
+                guard let selected else { return event }
+                let action = modifiers == .command
+                    ? settingsStore.todayReturnAction.alternate
+                    : settingsStore.todayReturnAction
+                action.perform(on: selected, settingsStore: settingsStore)
+                return nil
+            default:
+                break
+            }
+
+            if modifiers.isEmpty, event.charactersIgnoringModifiers?.lowercased() == "d",
+               let selected, !selected.isAllDay, let key = selected.alarmKey {
+                settingsStore.toggleEventAlarm(key: key)
+                return nil
+            }
+            return event
+        }
     }
 
     /// Row at the bottom of the menu announcing a newer release; opens the update dialog.
@@ -164,28 +223,44 @@ struct MenuBarContentView: View {
                 .frame(maxWidth: .infinity, minHeight: 120)
                 .padding()
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(dayGroups, id: \.day) { group in
-                            Section {
-                                ForEach(group.events, id: \.alarmKey) { event in
-                                    CalendarEventRow(event: event)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 0) {
+                            ForEach(dayGroups, id: \.day) { group in
+                                Section {
+                                    ForEach(group.events, id: \.alarmKey) { event in
+                                        CalendarEventRow(
+                                            event: event,
+                                            isSelected: event.alarmKey != nil && selection.selectedKey == event.alarmKey,
+                                            onHoverChange: { hovering in
+                                                if hovering, let key = event.alarmKey {
+                                                    selection.pointerEntered(key: key)
+                                                }
+                                            }
+                                        )
+                                        .id(event.alarmKey)
+                                    }
+                                } header: {
+                                    Text(dayLabel(for: group.day))
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.secondary)
+                                        .textCase(.uppercase)
+                                        .padding(.horizontal, 12)
+                                        .padding(.top, 8)
+                                        .padding(.bottom, 4)
                                 }
-                            } header: {
-                                Text(dayLabel(for: group.day))
-                                    .font(.caption)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
-                                    .padding(.horizontal, 12)
-                                    .padding(.top, 8)
-                                    .padding(.bottom, 4)
                             }
                         }
+                        .padding(.bottom, 6)
                     }
-                    .padding(.bottom, 6)
+                    .frame(maxHeight: 400)
+                    .onChange(of: selection.selectedKey) { _, key in
+                        if let key {
+                            withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo(key) }
+                        }
+                    }
                 }
-                .frame(maxHeight: 400)
             }
         }
     }

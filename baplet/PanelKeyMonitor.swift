@@ -11,6 +11,7 @@ enum KeyCode {
     static let keypadEnter: UInt16 = 76
     static let downArrow: UInt16 = 125
     static let upArrow: UInt16 = 126
+    static let escape: UInt16 = 53
 }
 
 extension NSEvent {

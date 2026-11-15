@@ -5,6 +5,7 @@
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //
 
+import AppKit
 import EventKit
 import KeyboardShortcuts
 import SwiftUI
@@ -43,6 +44,10 @@ struct SettingsView: View {
 
     @State private var selectedPane: SettingsPane = .calendars
 
+    /// Watches the Settings window for Escape, which closes it.
+    @State private var escapeMonitor = PanelKeyMonitor()
+
+    /// Lays out the sidebar and the selected pane, and makes Escape close the window.
     var body: some View {
         NavigationSplitView {
             List(SettingsPane.allCases, id: \.self, selection: $selectedPane) { pane in
@@ -64,9 +69,23 @@ struct SettingsView: View {
                 AboutPane()
             }
         }
-        .frame(width: 580, height: 420)
+        .frame(width: 660, height: 500)
         .onAppear {
             selectedPane = DemoMode.scene?.settingsPane.flatMap(SettingsPane.init(rawValue:)) ?? .calendars
+        }
+        .background(WindowReader { installEscapeToClose(for: $0) })
+    }
+
+    /// Closes the window on a plain Escape, like other macOS settings windows. Escape still goes
+    /// to a text field or the shortcut recorder while one is being edited (the field editor is
+    /// first responder then), so it can cancel the edit or the recording instead.
+    private func installEscapeToClose(for window: NSWindow) {
+        escapeMonitor.start(for: window) { [weak window] event in
+            let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
+            guard let window, event.keyCode == KeyCode.escape, modifiers.isEmpty,
+                  !(window.firstResponder is NSText) else { return event }
+            window.performClose(nil)
+            return nil
         }
     }
 }
@@ -357,7 +376,7 @@ private struct AboutPane: View {
             }
 
             if !OpenSourcePackage.all.isEmpty {
-                Section("Open Source") {
+                Section("Built with open source") {
                     ForEach(OpenSourcePackage.all) { package in
                         LabeledContent {
                             Button("License") { licenseShown = package }
