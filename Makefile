@@ -20,6 +20,19 @@ ADHOC_FLAGS := CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=
 ifeq ($(ADHOC),1)
 XCODEBUILD += $(ADHOC_FLAGS)
 endif
+# `make dmg` signs with SIGN_IDENTITY (the SHA-1 of the self-signed "Baplet Release Signing"
+# certificate, found in SIGN_KEYCHAIN) when set, so macOS keeps calendar access across
+# updates; without it the DMG is ad-hoc signed, for local tries.
+SIGN_IDENTITY ?=
+SIGN_KEYCHAIN ?=
+ifeq ($(SIGN_IDENTITY),)
+DMG_SIGN_FLAGS := $(ADHOC_FLAGS)
+else
+DMG_SIGN_FLAGS := CODE_SIGN_IDENTITY=$(SIGN_IDENTITY) CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=
+ifneq ($(SIGN_KEYCHAIN),)
+DMG_SIGN_FLAGS += OTHER_CODE_SIGN_FLAGS="--keychain $(SIGN_KEYCHAIN)"
+endif
+endif
 PREFS := $(HOME)/Library/Preferences/io.konkord.baplet.plist
 BUNDLE_ID := io.konkord.baplet
 
@@ -74,8 +87,16 @@ build: ## Build the app (Debug)
 screenshots: ## Capture the website screenshots from demo mode (SCENES="menu today" for a subset)
 	@scripts/screenshots.sh $(SCENES)
 
-dmg: ## Build an ad-hoc signed release DMG (VERSION=1.2.3 BUILD_NUMBER=n)
-	@$(XCODEBUILD) $(ADHOC_FLAGS) -configuration Release MARKETING_VERSION=$(VERSION) CURRENT_PROJECT_VERSION=$(BUILD_NUMBER) build 2>&1 | $(SUMMARY)
+dmg: ## Build a release DMG (VERSION=1.2.3 BUILD_NUMBER=n; SIGN_IDENTITY=<sha1> signs with the release certificate)
+	@$(XCODEBUILD) $(DMG_SIGN_FLAGS) -configuration Release MARKETING_VERSION=$(VERSION) CURRENT_PROJECT_VERSION=$(BUILD_NUMBER) build 2>&1 | $(SUMMARY)
+	@if [ -n "$(SIGN_IDENTITY)" ]; then \
+		requirement="$$(codesign -d -r- $(DERIVED)/Build/Products/Release/Baplet.app 2>&1)"; \
+		identity="$$(echo "$(SIGN_IDENTITY)" | tr 'A-F' 'a-f')"; \
+		if ! echo "$$requirement" | grep -q "certificate root = H\"$$identity\""; then \
+			echo "error: Baplet.app is not signed with the release certificate:"; echo "$$requirement"; exit 1; \
+		fi; \
+		echo "Signed with the release certificate ($(SIGN_IDENTITY))."; \
+	fi
 	@rm -rf build/dmg-staging && mkdir -p build/dmg-staging
 	@cp -R $(DERIVED)/Build/Products/Release/Baplet.app build/dmg-staging/
 	@ln -s /Applications build/dmg-staging/Applications

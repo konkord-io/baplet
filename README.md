@@ -8,7 +8,7 @@ A macOS menu bar app that keeps you on top of your calendar events with customiz
 
 **[⬇ Download Baplet for macOS](https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg)** (macOS 26.3+, free) · [website](https://baplet.konkord.io) · [docs](https://baplet.konkord.io/docs) · [all releases](https://github.com/konkord-io/baplet/releases)
 
-> Baplet isn't signed by Apple yet, so macOS blocks it the first time you open it. After dragging it to Applications, open **System Settings → Privacy & Security** and click **Open Anyway** next to Baplet (or run `xattr -dr com.apple.quarantine /Applications/Baplet.app`). You only do this once: later versions install from inside Baplet via **Settings → About → Check for Updates**.
+> Baplet isn't signed by Apple, so macOS blocks it the first time you open it. After dragging it to Applications, open **System Settings → Privacy & Security** and click **Open Anyway** next to Baplet (or run `xattr -dr com.apple.quarantine /Applications/Baplet.app`). You only do this once: later versions install from inside Baplet via **Settings → About → Check for Updates**.
 
 ## Features
 
@@ -82,7 +82,7 @@ Once a release is published, don't reuse its version: ship the fix as the next p
 ### Installing a release (for the people you share it with)
 
 1. Open the DMG and drag **Baplet** to **Applications**.
-2. Start Baplet. macOS blocks it the first time, because these builds are not notarized yet.
+2. Start Baplet. macOS blocks it the first time, because Baplet isn't signed by Apple.
 3. Open **System Settings → Privacy & Security**, scroll down, click **Open Anyway** next to Baplet and confirm. As an alternative, run once:
    ```sh
    xattr -dr com.apple.quarantine /Applications/Baplet.app
@@ -91,18 +91,17 @@ Once a release is published, don't reuse its version: ship the fix as the next p
 
 After that, Baplet keeps itself up to date: it checks GitHub daily (or via **Settings → About → Check for Updates**), shows **Update available** in the menu, and **Install & Restart** downloads the new DMG, verifies its SHA-256 against the checksum GitHub publishes, swaps the app and relaunches, with no Open Anyway step. A version downloaded by hand from the website still needs Open Anyway.
 
-### Current limitations and the paid path
+### Signing
 
-Release builds are currently ad-hoc signed, because no Apple Developer Program membership is needed. That means:
+Baplet is free software, so it isn't signed with a paid Apple Developer ID. Release builds are signed with Baplet's own self-signed certificate ("Baplet Release Signing") instead:
 
-|                                    | Now (ad-hoc signed)                         | After enrolling ($99/yr, Developer ID + notarization) |
-| ---------------------------------- | ------------------------------------------- | ----------------------------------------------------- |
-| First launch                       | "Open Anyway" in Privacy & Security once     | Just double-click                                     |
-| Calendar permission after updates  | Asked again (the signature changes each build) | Kept                                               |
-| Downloads                          | Public GitHub Release, with a security warning on first launch | Public, clean (GitHub Releases or baplet.konkord.io) |
-| Updates                            | In-app (Check for Updates), no Open Anyway  | In-app, and could move to Sparkle                     |
+|                                    |                                                                 |
+| ---------------------------------- | --------------------------------------------------------------- |
+| First launch                       | "Open Anyway" in Privacy & Security once (macOS can't verify a self-signed developer) |
+| Calendar permission after updates  | Kept, because every release is signed with the same certificate |
+| Updates                            | In-app (Check for Updates), no Open Anyway                      |
 
-To move to the paid path, follow `docs/distribution.md`. After enrolling, only the signing step of `release.yml` changes (Developer ID + notarization, the steps `scripts/release.sh` already contains). Tagging and publishing stay the same.
+`release.yml` imports the certificate from the repository secrets `MACOS_SIGNING_P12_BASE64` and `MACOS_SIGNING_P12_PASSWORD` and refuses to release without them. `make dmg` signs with it when `SIGN_IDENTITY` is set and checks the result; without it, the DMG is ad-hoc signed for local tries. The certificate must never be replaced: a new one makes macOS ask every user for calendar access again.
 
 ## License
 
