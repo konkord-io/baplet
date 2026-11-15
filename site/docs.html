@@ -34,8 +34,8 @@
     </nav>
 
     <section id="install">
-      <div class="install-head">
-        <img class="fish" src="assets/fish.webp" alt="Baplet's goldfish mascot in a Baplet T-shirt" width="220" height="147">
+      <div class="section-head">
+        <img class="fish" src="assets/fish_muscles.webp" alt="Baplet's goldfish flexing its fins, ready to go" width="220" height="147">
         <div>
           <h2>Installing</h2>
           <p>Baplet needs macOS 26.3 or later. <a href="https://github.com/konkord-io/baplet/releases/latest/download/Baplet.dmg">Download Baplet.dmg</a>, then:</p>
@@ -55,7 +55,13 @@
     </section>
 
     <section id="how-it-works">
-      <h2>How it works</h2>
+      <div class="section-head">
+        <img class="fish" src="assets/fish_stressed.webp" alt="Baplet's goldfish looking stressed, surrounded by calendar pages" width="220" height="147" loading="lazy">
+        <div>
+          <h2>How it works</h2>
+          <p>Baplet watches your calendar and puts an alert in front of you a few minutes before each meeting.</p>
+        </div>
+      </div>
       <p>Baplet reads your events from the macOS Calendar app, so it works with every account you've added there: iCloud, Google, Exchange and others. Pick which calendars it watches in Settings → Calendars. Your calendar data stays on your Mac; Baplet only contacts GitHub to check for updates.</p>
       <p>A few minutes before a meeting starts (5 by default), Baplet puts an alert in front of you: a popup or a full-screen alert, in the style you choose, with an optional sound. The alert stays until you deal with it, and the sound repeats while it's open:</p>
       <ul>
@@ -68,7 +74,13 @@
     </section>
 
     <section id="usage">
-      <h2>Using Baplet</h2>
+      <div class="section-head">
+        <img class="fish" src="assets/fish_clock.webp" alt="Baplet's goldfish pointing at its watch" width="220" height="147" loading="lazy">
+        <div>
+          <h2>Using Baplet</h2>
+          <p>The menu bar, the menu and today's events: where to find what.</p>
+        </div>
+      </div>
       <figure class="docs-shot docs-shot--right">
         <img src="assets/screenshots/menu-dark.webp" alt="The Baplet menu listing today's and tomorrow's meetings" loading="lazy">
       </figure>
@@ -125,7 +137,13 @@
     </section>
 
     <section id="updating">
-      <h2>Updating</h2>
+      <div class="section-head">
+        <img class="fish fish--card" src="assets/fish_conference.webp" alt="Baplet's goldfish sitting happily at a meeting table" width="220" height="147" loading="lazy">
+        <div>
+          <h2>Updating</h2>
+          <p>New versions install from inside Baplet.</p>
+        </div>
+      </div>
       <p>Baplet checks for a new version once a day (you can turn that off in Settings → About). When one is out, <strong>Update available</strong> appears at the bottom of the menu. You can also check yourself with <strong>Check for Updates</strong> in Settings → About.</p>
       <p><strong>Install &amp; Restart</strong> downloads the new version, checks it against the checksum published with the release, replaces the app and starts it again. There's no Open Anyway step for updates. macOS asks for calendar access again after each update.</p>
       <p class="docs-note">When Baplet can't replace itself (for example when it runs from the disk image or from a folder you can't write to), you get <strong>Download Manually</strong> instead: install the new version the same way as the first time. Version 0.1.0 has no updater, so anyone on it needs to download a newer version by hand once.</p>
