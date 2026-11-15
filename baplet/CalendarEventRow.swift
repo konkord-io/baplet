@@ -26,8 +26,7 @@ struct CalendarEventRow: View {
     /// selection to the row under the mouse.
     var onHoverChange: ((Bool) -> Void)? = nil
 
-    /// Opacity of rows that are faded: events with their alarm switched off here, and events
-    /// that have already ended in the Today panel.
+    /// Opacity of rows that are faded: events with their alarm switched off here.
     static let fadedOpacity = 0.45
 
     @Environment(SettingsStore.self) private var settingsStore
@@ -69,7 +68,7 @@ struct CalendarEventRow: View {
                         .font(.system(size: 16))
                         .foregroundStyle(.blue)
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.rowIcon)
                 .hoverLabel("Join \(meetingLink.serviceName)")
             }
 
@@ -99,10 +98,13 @@ struct CalendarEventRow: View {
         }
     }
 
-    /// Accent highlight when selected, a light grey one under the pointer, otherwise none.
+    /// Accent highlight for the selected row, so the menu and the Today panel look the same.
+    /// A row whose container tracks hover itself (`onHoverChange`, the Today panel) is
+    /// highlighted only through `isSelected`, so the pointer and the keyboard never light up
+    /// two rows; other rows (the menu) highlight themselves under the pointer.
     private var rowBackground: Color {
-        if isSelected { return Color.accentColor.opacity(0.25) }
-        return isHovered ? Color.primary.opacity(0.1) : .clear
+        let highlighted = isSelected || (isHovered && onHoverChange == nil)
+        return highlighted ? Color.accentColor.opacity(0.25) : .clear
     }
 
     /// Two-way binding for the row's alarm checkbox, backed by this occurrence's setting in
@@ -152,9 +154,8 @@ private struct MonoCheckboxToggleStyle: ToggleStyle {
             Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.rowIcon)
         .accessibilityLabel("Alarm")
         .accessibilityValue(configuration.isOn ? "On" : "Off")
     }

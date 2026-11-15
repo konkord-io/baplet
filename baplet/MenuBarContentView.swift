@@ -33,7 +33,7 @@ struct MenuBarContentView: View {
                 updateRow(version: update.version.description)
             }
         }
-        .frame(width: 360)
+        .frame(width: 420)
     }
 
     /// Row at the bottom of the menu announcing a newer release; opens the update dialog.
@@ -183,6 +183,7 @@ struct MenuBarContentView: View {
                             }
                         }
                     }
+                    .padding(.bottom, 6)
                 }
                 .frame(maxHeight: 400)
             }

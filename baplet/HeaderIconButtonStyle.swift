@@ -32,12 +32,7 @@ private struct HeaderIconButton: View {
     /// cursors away.
     var body: some View {
         configuration.label
-            .frame(width: 26, height: 26)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color.primary.opacity(backgroundOpacity))
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .iconHoverHighlight(isHovering: isHovering, isPressed: configuration.isPressed)
             .hoverLabel(help, suppressed: configuration.isPressed)
             .onContinuousHover { phase in
                 switch phase {
@@ -48,14 +43,50 @@ private struct HeaderIconButton: View {
                     isHovering = false
                 }
             }
-            .animation(.easeOut(duration: 0.12), value: isHovering)
     }
+}
 
-    /// Highlight strength: none at rest, subtle on hover, stronger while pressed.
-    private var backgroundOpacity: Double {
-        if configuration.isPressed { return 0.18 }
-        return isHovering ? 0.10 : 0
+/// Small icon button style for the controls on an event row (join meeting, alarm checkbox):
+/// the same rounded hover/press highlight as the header icons, so it's clear which control
+/// the pointer is on. It leaves the cursor to the row.
+struct RowIconButtonStyle: ButtonStyle {
+    /// Builds the styled button; hover state lives in `RowIconButton` because a
+    /// `ButtonStyle` itself cannot hold `@State`.
+    func makeBody(configuration: Configuration) -> some View {
+        RowIconButton(configuration: configuration)
     }
+}
+
+/// The view behind `RowIconButtonStyle`, tracking whether the pointer is over the button.
+private struct RowIconButton: View {
+    let configuration: ButtonStyleConfiguration
+    @State private var isHovering = false
+
+    /// Draws the label with the hover/press highlight behind it.
+    var body: some View {
+        configuration.label
+            .iconHoverHighlight(isHovering: isHovering, isPressed: configuration.isPressed)
+            .onHover { isHovering = $0 }
+    }
+}
+
+extension View {
+    /// Puts the view in a fixed 26 pt hit area with a rounded highlight behind it: none at
+    /// rest, subtle on hover and stronger while pressed, matching macOS toolbar and Control
+    /// Center buttons.
+    func iconHoverHighlight(isHovering: Bool, isPressed: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 6, style: .continuous)
+        let opacity = isPressed ? 0.30 : (isHovering ? 0.20 : 0)
+        return frame(width: 26, height: 26)
+            .background(shape.fill(Color.primary.opacity(opacity)))
+            .contentShape(shape)
+            .animation(.easeOut(duration: 0.12), value: opacity)
+    }
+}
+
+extension ButtonStyle where Self == RowIconButtonStyle {
+    /// Shorthand so call sites can write `.buttonStyle(.rowIcon)`.
+    static var rowIcon: RowIconButtonStyle { RowIconButtonStyle() }
 }
 
 extension ButtonStyle where Self == HeaderIconButtonStyle {

@@ -144,7 +144,7 @@ enum TodayPanel {
 /// and the panel's key handling (arrows, Return, D).
 @Observable
 final class TodayListModel {
-    /// Today's events in display order, captured when the panel opened.
+    /// Today's events that haven't ended, in display order, captured when the panel opened.
     let events: [EKEvent]
 
     /// Index into `events` of the highlighted row, or nil when the list is empty.
@@ -155,13 +155,14 @@ final class TodayListModel {
     /// resting pointer (or opening the panel under it) doesn't steal the selection.
     private var lastPointerLocation = NSEvent.mouseLocation
 
-    /// Starts with the meeting happening now, or the next one; all-day events are skipped.
-    /// When every meeting has ended, the last one is selected. `now` defaults to the current
-    /// time; tests pass a fixed one.
+    /// Drops events that have already ended, so the panel lists the same meetings as the menu,
+    /// and starts with the first timed event (the one happening now, or the next); all-day
+    /// events are only selected when nothing else is left. `now` defaults to the current time;
+    /// tests pass a fixed one.
     init(events: [EKEvent], now: Date = AppClock.now()) {
-        self.events = events
-        let timed = events.indices.filter { !events[$0].isAllDay }
-        self.selectedIndex = timed.first { events[$0].endDate > now } ?? timed.last ?? events.indices.first
+        let remaining = events.filter { $0.endDate > now }
+        self.events = remaining
+        self.selectedIndex = remaining.indices.first { !remaining[$0].isAllDay } ?? remaining.indices.first
     }
 
     /// The selected event, if any.
@@ -240,9 +241,19 @@ private struct TodayView: View {
             Divider()
 
             if model.events.isEmpty {
-                Text("Nothing on your calendar today.")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 100)
+                VStack(spacing: 8) {
+                    Image("fish_muscles")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 140)
+                        .accessibilityHidden(true)
+                    Text("No more meetings today")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
             } else {
                 eventList
                 Divider()
@@ -266,7 +277,6 @@ private struct TodayView: View {
                                 if hovering { model.pointerEntered(row: index) }
                             }
                         )
-                        .opacity(event.endDate < AppClock.now() ? CalendarEventRow.fadedOpacity : 1)
                         .id(index)
                     }
                 }
