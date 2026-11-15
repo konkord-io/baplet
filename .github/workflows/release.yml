@@ -20,8 +20,39 @@ jobs:
       - name: Run unit tests
         run: make test ADHOC=1 VERBOSE=1
 
+      - name: Import release signing certificate
+        env:
+          P12_BASE64: ${{ secrets.MACOS_SIGNING_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.MACOS_SIGNING_P12_PASSWORD }}
+        run: |
+          if [ -z "$P12_BASE64" ] || [ -z "$P12_PASSWORD" ]; then
+            echo "::error::MACOS_SIGNING_P12_BASE64 / MACOS_SIGNING_P12_PASSWORD are not set; releases must be signed with the Baplet release certificate."
+            exit 1
+          fi
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          echo "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/signing.p12" -k "$keychain" -P "$P12_PASSWORD" -T /usr/bin/codesign >/dev/null
+          rm "$RUNNER_TEMP/signing.p12"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          identity="$(security find-identity -p codesigning "$keychain" | awk '/"Baplet Release Signing"/ { print $2; exit }')"
+          if [ -z "$identity" ]; then
+            echo "::error::The imported certificate has no \"Baplet Release Signing\" identity."
+            exit 1
+          fi
+          echo "SIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
+          echo "SIGN_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+
       - name: Build DMG
         run: make dmg VERSION="${GITHUB_REF_NAME#v}" BUILD_NUMBER="${{ github.run_number }}" VERBOSE=1
+
+      - name: Remove signing keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
 
       - name: Create draft GitHub Release
         env:
@@ -36,12 +67,12 @@ jobs:
           ## Installing
 
           1. Open the DMG and drag **Baplet** to **Applications** (replace the old version if asked).
-          2. Start Baplet. macOS blocks it the first time, because this build isn't notarized yet.
+          2. Start Baplet. macOS blocks it the first time, because Baplet isn't signed by Apple.
           3. Open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to Baplet, then confirm.
 
           Or run once in Terminal: `xattr -dr com.apple.quarantine /Applications/Baplet.app`
 
-          You only need to do this when you download Baplet yourself. Updates installed with **Check for Updates** (Settings → About) skip it. macOS asks for calendar access again after each update.
+          You only need to do this when you download Baplet yourself. Updates installed with **Check for Updates** (Settings → About) skip it, and Baplet keeps its calendar access across updates.
           NOTES
           cp "build/Baplet-${version}.dmg" build/Baplet.dmg
           gh release create "$GITHUB_REF_NAME" "build/Baplet-${version}.dmg" build/Baplet.dmg \

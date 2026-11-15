@@ -4,12 +4,15 @@ Planning document. Nothing here has been run or created yet. Facts about this pr
 
 ## Where things stand
 
+> **Decision (2026-11-15):** no paid Apple Developer Program membership; Baplet is free software. Releases are signed with a self-signed certificate ("Baplet Release Signing", see the README's "Signing" section) so calendar access survives updates, and first launch keeps the Open Anyway step. The Developer ID, notarization and App Store phases below are kept for reference only.
+
+
 - Bundle ID `io.konkord.baplet`, version `MARKETING_VERSION = 1.0`, `CURRENT_PROJECT_VERSION = 1` (Debug and Release alike), deployment target macOS 26.3.
 - Signing is `Automatic` with team `H2MCB54VDW`, which is a free Personal Team. The only local identity is a free "Apple Development" certificate. Apple only issues Developer ID certificates, notarization and App Store access to paid members.
 - Hardened runtime is on, sandbox is off (`ENABLE_APP_SANDBOX = NO`). The only entitlement is `com.apple.security.personal-information.calendars`. `LSUIElement` is set.
 - Only dependency: KeyboardShortcuts 3.1.0 (pinned, `Package.resolved` committed).
 - `scripts/release.sh` already does archive, Developer ID export, DMG, notarize, staple. It cannot work yet: it needs a paid account and a stored notarytool profile built from an Apple ID and app-specific password.
-- The GitHub repo `konkord-io/baplet` is **public** (since 2026-11-14), owned by an organisation on the Free plan. CI (`ci.yml`) and an ad-hoc-signed draft-release workflow (`release.yml`) exist; see the README's "Releasing" section.
+- The GitHub repo `konkord-io/baplet` is **public** (since 2026-11-14), owned by an organisation on the Free plan. CI (`ci.yml`) and a draft-release workflow (`release.yml`, signed with the self-signed release certificate) exist; see the README's "Releasing" section.
 - The README's "Sharing the app with friends" section describes the free workaround (Gatekeeper "Open Anyway"). It is the right answer until Phase 0 is done, and obsolete after.
 
 What "no Gatekeeper warnings" requires: the app is signed with a Developer ID Application certificate, uses the hardened runtime, has been notarized by Apple, and the notarization ticket is stapled so it also works offline. See [Notarizing macOS software](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution) and [Signing Mac software with Developer ID](https://developer.apple.com/developer-id/).
