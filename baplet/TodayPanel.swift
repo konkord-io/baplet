@@ -128,14 +128,9 @@ enum TodayPanel {
         }
     }
 
-    /// Joins the event's meeting (falling back to Calendar when it has no link) or opens it in
-    /// Calendar, then closes the panel.
+    /// Performs the Return action on the event, then closes the panel.
     private static func perform(_ action: TodayReturnAction, on event: EKEvent, settingsStore: SettingsStore) {
-        if action == .joinMeeting, let link = AlertService.extractMeetingLink(from: event) {
-            BrowserService.openMeeting(link.url, settings: settingsStore)
-        } else {
-            AlertService.openEventInCalendar(event)
-        }
+        action.perform(on: event, settingsStore: settingsStore)
         close()
     }
 }
@@ -318,6 +313,18 @@ private struct TodayView: View {
                 .padding(.vertical, 1)
                 .background(Color.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 3))
             Text(action)
+        }
+    }
+}
+
+extension TodayReturnAction {
+    /// Joins the event's meeting (falling back to Calendar when it has no link) or opens it in
+    /// Calendar. Shared by the Today panel and the menu's keyboard handling.
+    func perform(on event: EKEvent, settingsStore: SettingsStore) {
+        if self == .joinMeeting, let link = AlertService.extractMeetingLink(from: event) {
+            BrowserService.openMeeting(link.url, settings: settingsStore)
+        } else {
+            AlertService.openEventInCalendar(event)
         }
     }
 }

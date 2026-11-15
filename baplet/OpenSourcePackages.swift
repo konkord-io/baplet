@@ -49,7 +49,7 @@ extension OpenSourcePackage {
     )
 
     /// Every third-party package Baplet ships with. Add an entry here whenever a dependency is
-    /// added; the About tab's "Open Source" section is hidden while this list is empty.
+    /// added; the About tab's "Built with open source" section is hidden while this list is empty.
     static let all: [OpenSourcePackage] = [
         OpenSourcePackage(
             name: "KeyboardShortcuts",

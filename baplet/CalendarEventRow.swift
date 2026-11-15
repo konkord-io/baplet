@@ -19,11 +19,12 @@ struct CalendarEventRow: View {
     /// so a container such as the Today panel can close itself.
     var onOpened: (() -> Void)? = nil
 
-    /// Whether this row is the keyboard selection (Today panel); drawn with an accent highlight.
+    /// Whether this row is the keyboard selection (menu and Today panel); drawn with an accent
+    /// highlight.
     var isSelected = false
 
-    /// Called when the pointer enters or leaves the row, so the Today panel can move its
-    /// selection to the row under the mouse.
+    /// Called when the pointer enters or leaves the row, so the menu and the Today panel can
+    /// move their selection to the row under the mouse.
     var onHoverChange: ((Bool) -> Void)? = nil
 
     /// Opacity of rows that are faded: events with their alarm switched off here.

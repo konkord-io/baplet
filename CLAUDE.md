@@ -35,7 +35,7 @@ Startup (access request, event load, `AlarmManager.start`, and when no calendars
 
 `BrowserService` lists browsers that open `https` links, reads Chromium (`Local State`) and Firefox (`profiles.ini`) profiles, and opens meeting links in the browser/profile chosen in Settings → Meetings. Every meeting link goes through `BrowserService.openMeeting`.
 
-`TodayPanel` is a Spotlight-like floating panel of today's events (reusing `CalendarEventRow`), opened from the menu header or the global shortcut `KeyboardShortcuts.Name.showToday`. That shortcut comes from the KeyboardShortcuts package (pinned to an exact version; `Package.resolved` is committed), is registered in `MenuBarLabel.startUp` and has no default. The panel's keys (↑↓, Return/⌘Return per `SettingsStore.todayReturnAction`, D) are handled by a `PanelKeyMonitor` in `TodayPanel`, with the selection in `TodayListModel`.
+`TodayPanel` is a Spotlight-like floating panel of today's events (reusing `CalendarEventRow`), opened from the menu header or the global shortcut `KeyboardShortcuts.Name.showToday`. That shortcut comes from the KeyboardShortcuts package (pinned to an exact version; `Package.resolved` is committed), is registered in `MenuBarLabel.startUp` and has no default. The panel's keys (↑↓, Return/⌘Return per `SettingsStore.todayReturnAction`, D) are handled by a `PanelKeyMonitor` in `TodayPanel`, with the selection in `TodayListModel`. The menu takes the same keys (`MenuBarContentView.installKeyHandling`, selection in `EventListSelection`, keyed by `alarmKey` because the menu re-fetches while open; nothing is selected until the first arrow). Escape closes Settings (`SettingsView.installEscapeToClose`). Both find their `NSWindow` with `WindowReader`.
 
 `AlertService` is an enum that does the AppKit work SwiftUI can't: `NSPanel` alerts (floating popup, or borderless full screen) via `AlertService.show(style:props:)`, sound, meeting-link extraction, opening events in Calendar (`openEventInCalendar(_:)`), and the O/D/S/Return keyboard shortcuts. It holds the one alert on screen; an alert closed with its close button or replaced by another (e.g. Test Alert) is snoozed for `AlertProps.defaultSnoozeMinutes`, never dropped. The full-screen panel sits at `.popUpMenu - 1`: any higher and SwiftUI `Menu` dropdowns open behind it.
 
@@ -69,7 +69,7 @@ Run `/release` (`.claude/skills/release/SKILL.md`) for the step-by-step routine.
 - Deployment target is macOS 26.3.
 - Bundle ID `io.konkord.baplet`, team `H2MCB54VDW`. Changing the bundle ID resets users' `UserDefaults` and calendar permission.
 - `design/` holds the untouched original artwork (logo SVG/PNG, menu bar PDF, alert image). The asset catalog has working copies (some downscaled). Keep every original and every image asset, even ones the code no longer references. When swapping an image, only change the references.
-- Adding a third-party dependency means adding its entry (name, license, URL, full license text) to `OpenSourcePackage.all` in `OpenSourcePackages.swift`. The About tab credits it from there and shows its "Open Source" section only when that list is non-empty.
+- Adding a third-party dependency means adding its entry (name, license, URL, full license text) to `OpenSourcePackage.all` in `OpenSourcePackages.swift`. The About tab credits it from there and shows its "Built with open source" section only when that list is non-empty.
 - Baplet is MIT licensed. `LICENSE` at the repo root and `OpenSourcePackage.baplet.licenseText` (shown in About) must stay identical.
 
 ## Demo mode and screenshots

@@ -12,7 +12,8 @@ A macOS menu bar app that keeps you on top of your calendar events with customiz
 
 ## Features
 
-- **Menu bar integration** — see upcoming events at a glance with a live countdown icon
+- **Menu bar integration** — see upcoming events at a glance, with a countdown in the menu bar a few minutes before each meeting; pick an event with the arrow keys, Return to join
+- **Today panel** — a global shortcut shows what's left of today from any app, with the same keys
 - **Multiple calendar support** — select which calendars to monitor from all connected sources
 - **Customizable alert styles** — choose between four visual styles:
   - Popup Dialog
