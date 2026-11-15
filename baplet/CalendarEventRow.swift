@@ -5,6 +5,7 @@
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //
 
+import AppKit
 import EventKit
 import SwiftUI
 
@@ -25,13 +26,16 @@ struct CalendarEventRow: View {
     /// selection to the row under the mouse.
     var onHoverChange: ((Bool) -> Void)? = nil
 
-    /// Opacity of rows that are faded: events with their alarm switched off here, and events
-    /// that have already ended in the Today panel.
+    /// Opacity of rows that are faded: events with their alarm switched off here.
     static let fadedOpacity = 0.45
 
     @Environment(SettingsStore.self) private var settingsStore
     @State private var isHovered = false
 
+    /// Lays out the row and handles hover and clicks. The pointing-hand cursor is set on every
+    /// pointer move rather than with `.pointerStyle`, because AppKit cursor rects in the
+    /// `MenuBarExtra` window stay inactive until the first click, leaving the cursor of the
+    /// app underneath.
     var body: some View {
         HStack(spacing: 10) {
             CalendarColorDot(calendar: event.calendar)
@@ -64,21 +68,24 @@ struct CalendarEventRow: View {
                         .font(.system(size: 16))
                         .foregroundStyle(.blue)
                 }
-                .buttonStyle(.borderless)
-                .help("Join \(meetingLink.serviceName)")
+                .buttonStyle(.rowIcon)
+                .hoverLabel("Join \(meetingLink.serviceName)")
             }
 
             if let alarmEnabled {
                 Toggle("Alarm", isOn: alarmEnabled)
                     .toggleStyle(MonoCheckboxToggleStyle())
-                    .help(alarmEnabled.wrappedValue ? "Disable alarm" : "Enable alarm")
+                    .hoverLabel(alarmEnabled.wrappedValue ? "Disable alarm" : "Enable alarm")
             }
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 12)
         .background(rowBackground)
+        .zIndex(isHovered ? 1 : 0)
         .contentShape(Rectangle())
-        .pointerStyle(.link)
+        .onContinuousHover { phase in
+            if case .active = phase { NSCursor.pointingHand.set() }
+        }
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
@@ -91,10 +98,13 @@ struct CalendarEventRow: View {
         }
     }
 
-    /// Accent highlight when selected, a light grey one under the pointer, otherwise none.
+    /// Accent highlight for the selected row, so the menu and the Today panel look the same.
+    /// A row whose container tracks hover itself (`onHoverChange`, the Today panel) is
+    /// highlighted only through `isSelected`, so the pointer and the keyboard never light up
+    /// two rows; other rows (the menu) highlight themselves under the pointer.
     private var rowBackground: Color {
-        if isSelected { return Color.accentColor.opacity(0.25) }
-        return isHovered ? Color.primary.opacity(0.1) : .clear
+        let highlighted = isSelected || (isHovered && onHoverChange == nil)
+        return highlighted ? Color.accentColor.opacity(0.25) : .clear
     }
 
     /// Two-way binding for the row's alarm checkbox, backed by this occurrence's setting in
@@ -144,9 +154,8 @@ private struct MonoCheckboxToggleStyle: ToggleStyle {
             Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
                 .font(.system(size: 16))
                 .foregroundStyle(.primary)
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.rowIcon)
         .accessibilityLabel("Alarm")
         .accessibilityValue(configuration.isOn ? "On" : "Off")
     }

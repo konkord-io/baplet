@@ -137,7 +137,8 @@ final class CalendarService {
     }
 
     /// Returns all of today's events (midnight to midnight, including ones already over) from
-    /// the given calendars: all-day events first, then by start time. Used by the Today panel.
+    /// the given calendars: all-day events first, then by start time. Used by the Today panel,
+    /// whose `TodayListModel` drops the ones that have ended.
     func todaysEvents(enabledCalendarIDs: Set<String>) -> [EKEvent] {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: AppClock.now())

@@ -25,6 +25,7 @@ struct MenuBarContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+                .zIndex(1)
             Divider()
             content
             if let update = updateService.availableUpdate {
@@ -32,7 +33,7 @@ struct MenuBarContentView: View {
                 updateRow(version: update.version.description)
             }
         }
-        .frame(width: 360)
+        .frame(width: 420)
     }
 
     /// Row at the bottom of the menu announcing a newer release; opens the update dialog.
@@ -70,16 +71,14 @@ struct MenuBarContentView: View {
                 Image(systemName: "arrow.clockwise")
                     .symbolEffect(.rotate, value: refreshCount)
             }
-            .buttonStyle(.headerIcon)
-            .help("Refresh events")
+            .buttonStyle(.headerIcon(help: "Refresh events"))
 
             Button {
                 TodayPanel.show(calendarService: calendarService, settingsStore: settingsStore)
             } label: {
                 Image(systemName: "calendar.day.timeline.left")
             }
-            .buttonStyle(.headerIcon)
-            .help("Show today's events")
+            .buttonStyle(.headerIcon(help: "Show today's events"))
 
             Button {
                 settingsStore.alarmsPaused.toggle()
@@ -88,22 +87,21 @@ struct MenuBarContentView: View {
                 Image(systemName: settingsStore.alarmsPaused ? "bell.slash" : "bell")
                     .foregroundStyle(settingsStore.alarmsPaused ? AnyShapeStyle(Color("PausedRed")) : AnyShapeStyle(.primary))
             }
-            .buttonStyle(.headerIcon)
-            .help(settingsStore.alarmsPaused ? "Resume alarms" : "Pause alarms")
+            .buttonStyle(.headerIcon(help: settingsStore.alarmsPaused ? "Resume alarms" : "Pause alarms"))
 
             Button {
                 openWindow.openSettings()
             } label: {
                 Image(systemName: "gearshape")
             }
-            .buttonStyle(.headerIcon)
+            .buttonStyle(.headerIcon(help: "Settings"))
 
             Button {
                 NSApp.terminate(nil)
             } label: {
                 Image(systemName: "power")
             }
-            .buttonStyle(.headerIcon)
+            .buttonStyle(.headerIcon(help: "Quit Baplet"))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -185,6 +183,7 @@ struct MenuBarContentView: View {
                             }
                         }
                     }
+                    .padding(.bottom, 6)
                 }
                 .frame(maxHeight: 400)
             }
