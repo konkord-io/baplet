@@ -173,7 +173,7 @@ private struct AlertsPane: View {
 
         Form {
             Section {
-                SettingsHelpText("Choose how Baplet alerts you before an event starts, and try it out with Test Alert. The last setting controls how many days of events the menu shows.")
+                SettingsHelpText("Choose how Baplet alerts you before an event starts, and try it out with Test Alert. You can also choose how early the menu bar counts down, the working hours Baplet alerts in, and how many days of events the menu shows.")
             }
 
             Section {
@@ -191,6 +191,19 @@ private struct AlertsPane: View {
                         AlertService.showTestAlert(settings: settingsStore)
                     }
                 }
+            }
+
+            Section {
+                Picker("Show countdown in menu bar", selection: $settings.countdownRange) {
+                    ForEach(CountdownRange.allCases) { range in
+                        Text(range.label).tag(range)
+                    }
+                }
+            }
+
+            Section("Working hours") {
+                WorkingHoursEditor()
+                SettingsHelpText(WorkingHoursHelp.text)
             }
 
             Section {
@@ -463,4 +476,9 @@ private struct ValueStepper: View {
                 .labelsHidden()
         }
     }
+}
+
+/// The explanation under the working hours settings, shared with the welcome guide.
+enum WorkingHoursHelp {
+    static let text: LocalizedStringKey = "Meetings that start outside your working hours don't alert and don't show in the menu bar countdown. They still appear in the menu, where you can tick a meeting's box to get its alert anyway."
 }

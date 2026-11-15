@@ -46,6 +46,25 @@ struct MenuBarLabel: View {
         .onChange(of: settingsStore.daysToShow) {
             reloadEvents()
         }
+        .onChange(of: alarmRulesSignature) {
+            alarmManager.recheckNow()
+        }
+    }
+
+    /// Everything that decides which events alert and what the menu bar countdown shows,
+    /// so a change in Settings or a row checkbox updates the menu bar at once instead of on
+    /// the next timer tick.
+    private var alarmRulesSignature: [AnyHashable] {
+        [
+            settingsStore.workingHours.isEnabled,
+            settingsStore.workingHours.startMinutes,
+            settingsStore.workingHours.endMinutes,
+            settingsStore.workingHours.weekdays,
+            settingsStore.countdownRange,
+            settingsStore.minutesBefore,
+            settingsStore.disabledEventAlarms,
+            settingsStore.enabledOutsideHoursAlarms,
+        ]
     }
 
     /// Runs once at launch: registers the global Today shortcut, requests calendar access if
