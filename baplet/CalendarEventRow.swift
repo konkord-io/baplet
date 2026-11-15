@@ -5,6 +5,7 @@
 //  Created by Jakob Vad Nielsen on 12/05/2026.
 //
 
+import AppKit
 import EventKit
 import SwiftUI
 
@@ -32,6 +33,10 @@ struct CalendarEventRow: View {
     @Environment(SettingsStore.self) private var settingsStore
     @State private var isHovered = false
 
+    /// Lays out the row and handles hover and clicks. The pointing-hand cursor is set on every
+    /// pointer move rather than with `.pointerStyle`, because AppKit cursor rects in the
+    /// `MenuBarExtra` window stay inactive until the first click, leaving the cursor of the
+    /// app underneath.
     var body: some View {
         HStack(spacing: 10) {
             CalendarColorDot(calendar: event.calendar)
@@ -65,20 +70,23 @@ struct CalendarEventRow: View {
                         .foregroundStyle(.blue)
                 }
                 .buttonStyle(.borderless)
-                .help("Join \(meetingLink.serviceName)")
+                .hoverLabel("Join \(meetingLink.serviceName)")
             }
 
             if let alarmEnabled {
                 Toggle("Alarm", isOn: alarmEnabled)
                     .toggleStyle(MonoCheckboxToggleStyle())
-                    .help(alarmEnabled.wrappedValue ? "Disable alarm" : "Enable alarm")
+                    .hoverLabel(alarmEnabled.wrappedValue ? "Disable alarm" : "Enable alarm")
             }
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 12)
         .background(rowBackground)
+        .zIndex(isHovered ? 1 : 0)
         .contentShape(Rectangle())
-        .pointerStyle(.link)
+        .onContinuousHover { phase in
+            if case .active = phase { NSCursor.pointingHand.set() }
+        }
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
