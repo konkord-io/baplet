@@ -1,8 +1,8 @@
 // Gives a file in the DMG a custom Finder icon copied from another file or app, so Finder
 // never has to look it up: it draws the Applications alias on a disk image as a blank square,
-// and web links as generic "HTTP" pages.
+// and web links as generic "HTTP" pages. The icon is fixed when the DMG is built, so it never
+// depends on the build machine's settings (such as its default browser).
 // Usage: swift set-icon.swift <file to change> <file or app whose icon to use>
-//        swift set-icon.swift <file to change> --default-browser
 //        swift set-icon.swift <file to change> --image <png to use as the icon>
 
 import AppKit
@@ -11,7 +11,7 @@ import AppKit
 func main() {
     let arguments = CommandLine.arguments
     guard arguments.count == 3 || (arguments.count == 4 && arguments[2] == "--image") else {
-        FileHandle.standardError.write(Data("usage: set-icon.swift <target> <source | --default-browser | --image <png>>\n".utf8))
+        FileHandle.standardError.write(Data("usage: set-icon.swift <target> <source | --image <png>>\n".utf8))
         exit(2)
     }
     let target = arguments[1]
@@ -22,10 +22,6 @@ func main() {
             exit(1)
         }
         icon = image
-    } else if arguments[2] == "--default-browser" {
-        let probe = URL(string: "https://example.com")!
-        let browser = NSWorkspace.shared.urlForApplication(toOpen: probe)?.path ?? "/Applications/Safari.app"
-        icon = NSWorkspace.shared.icon(forFile: browser)
     } else {
         icon = NSWorkspace.shared.icon(forFile: arguments[2])
     }

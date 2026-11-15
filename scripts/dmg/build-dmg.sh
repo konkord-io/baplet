@@ -39,7 +39,7 @@ tiffutil -cathidpicheck "$here/background.png" "$here/background@2x.png" -out "$
 write_link "Installation help" "https://baplet.konkord.io/docs.html#install"
 write_link "Open Privacy & Security" "https://baplet.konkord.io/open-privacy-security.html"
 write_link "Sponsor Baplet" "https://github.com/sponsors/lazee"
-swift "$here/set-icon.swift" "$stage/Installation help.webloc" --default-browser \
+swift "$here/set-icon.swift" "$stage/Installation help.webloc" --image "$here/help-icon.png" \
     || echo "warning: could not set the Installation help icon."
 swift "$here/set-icon.swift" "$stage/Open Privacy & Security.webloc" "/System/Applications/System Settings.app" \
     || echo "warning: could not set the Privacy & Security icon."
