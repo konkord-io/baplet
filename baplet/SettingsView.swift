@@ -334,8 +334,13 @@ private struct AboutPane: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(SettingsStore.self) private var settingsStore
     @Environment(UpdateService.self) private var updateService
+    @Environment(\.openURL) private var openURL
     @State private var licenseShown: OpenSourcePackage?
 
+    /// The owner's GitHub Sponsors page, also linked from the website, README and install DMG.
+    private static let sponsorURL = URL(string: "https://github.com/sponsors/lazee")!
+
+    /// Lays out the app info, updates, the sponsor section and the open source credits.
     var body: some View {
         @Bindable var settings = settingsStore
 
@@ -390,6 +395,18 @@ private struct AboutPane: View {
                     }
                 }
                 Toggle("Check for updates automatically", isOn: $settings.checkForUpdatesAutomatically)
+            }
+
+            Section("Support Baplet") {
+                LabeledContent {
+                    Button {
+                        openURL(Self.sponsorURL)
+                    } label: {
+                        Label("Sponsor", systemImage: "heart.fill")
+                    }
+                } label: {
+                    Text("Baplet is free. Sponsoring helps pay Apple's yearly developer fee, so Baplet can one day open without the Open Anyway step.")
+                }
             }
 
             if !OpenSourcePackage.all.isEmpty {
