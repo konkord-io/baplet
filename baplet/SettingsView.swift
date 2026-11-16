@@ -173,7 +173,7 @@ private struct AlertsPane: View {
 
         Form {
             Section {
-                SettingsHelpText("Choose how Baplet alerts you before an event starts, and try it out with Test Alert. You can also choose how early the menu bar counts down, the working hours Baplet alerts in, and how many days of events the menu shows.")
+                SettingsHelpText("Choose how Baplet alerts you before an event starts, and try it out with Test Alert. Declined and cancelled meetings don't alert unless you tick them. You can also choose how early the menu bar counts down, the working hours Baplet alerts in, and how many days of events the menu shows.")
             }
 
             Section {
@@ -185,6 +185,7 @@ private struct AlertsPane: View {
                 LabeledContent("Alert before event") {
                     ValueStepper(value: $settings.minutesBefore, range: 1...60, unit: "min", pluralUnit: "min")
                 }
+                Toggle("Alert for meetings I declined", isOn: $settings.alertForDeclinedMeetings)
                 LabeledContent("Test the selected alert style") {
                     Button("Test Alert") {
                         AlertService.showTestAlert(settings: settingsStore)

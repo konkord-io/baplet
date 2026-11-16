@@ -90,8 +90,8 @@ struct MenuBarContentView: View {
             }
 
             if modifiers.isEmpty, event.charactersIgnoringModifiers?.lowercased() == "d",
-               let selected, !selected.isAllDay, let key = selected.alarmKey {
-                settingsStore.toggleEventAlarm(key: key)
+               let selected, !selected.isAllDay, selected.alarmKey != nil {
+                settingsStore.toggleEventAlarm(for: selected)
                 return nil
             }
             return event

@@ -16,6 +16,7 @@ Baplet is free. If it helps you, [sponsor it on GitHub](https://github.com/spons
 
 - **Menu bar integration** — see upcoming events at a glance, with a countdown to your next meeting today (e.g. `1h34m`, how early it appears is configurable); pick an event with the arrow keys, Return to join
 - **Working hours** — only alert during the hours and days you work; meetings outside them stay quiet unless you switch them on one by one
+- **Declined meetings stay quiet** — meetings you declined, and cancelled meetings still in your calendar, don't alert (struck through in the list; switch one on with its checkbox, or turn declined alerts back on in Settings → Alerts)
 - **Today panel** — a global shortcut shows what's left of today from any app, with the same keys
 - **Multiple calendar support** — select which calendars to monitor from all connected sources
 - **Customizable alert styles** — choose between four visual styles:

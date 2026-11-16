@@ -62,6 +62,7 @@ struct MenuBarLabel: View {
             settingsStore.workingHours.weekdays,
             settingsStore.countdownRange,
             settingsStore.minutesBefore,
+            settingsStore.alertForDeclinedMeetings,
             settingsStore.disabledEventAlarms,
             settingsStore.enabledOutsideHoursAlarms,
         ]

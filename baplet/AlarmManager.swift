@@ -155,11 +155,11 @@ final class AlarmManager {
     }
 
     /// Whether the event's alarm should be on screen now: a timed event whose alarm is
-    /// enabled and not snoozed, between its alarm time (start minus the lead time) and its end.
+    /// enabled (which rules out declined and cancelled meetings by default) and not snoozed, between its alarm time (start minus the lead time) and its end.
     private func isDue(_ event: EKEvent, now: Date, settingsStore: SettingsStore) -> Bool {
         guard !event.isAllDay,
               let key = event.alarmKey,
-              settingsStore.isAlarmEnabled(key: key) else { return false }
+              settingsStore.isAlarmEnabled(for: event) else { return false }
         if let snoozeExpiry = snoozedAlarms[key], now < snoozeExpiry {
             return false
         }
@@ -171,6 +171,7 @@ final class AlarmManager {
     /// Sound is played only when `soundEnabled` is true.
     private func fireAlarm(for event: EKEvent, settingsStore: SettingsStore) {
         guard let key = event.alarmKey else { return }
+        let attendance = event.attendance
         snoozedAlarms.removeValue(forKey: key)
 
         if settingsStore.soundEnabled {
@@ -186,7 +187,7 @@ final class AlarmManager {
                 location: event.location,
                 calendarName: event.calendar?.title ?? "",
                 meetingLink: meetingLink,
-                onDismiss: { [weak self] in self?.dismiss(key: key) },
+                onDismiss: { [weak self] in self?.dismiss(key: key, attendance: attendance) },
                 onSnooze: { [weak self] minutes in self?.snooze(key: key, minutes: minutes) },
                 onOpenMeeting: {
                     if let meetingLink {
@@ -200,13 +201,13 @@ final class AlarmManager {
     }
 
     /// Stops the alarm of one occurrence for good by switching it off in settings, then shows
-    /// the next due alert.
-    private func dismiss(key: String) {
+    /// the next due alert. `attendance` picks the stored set the switch-off goes into.
+    private func dismiss(key: String, attendance: EventAttendance) {
         snoozedAlarms.removeValue(forKey: key)
         if activeAlarmKey == key {
             activeAlarmKey = nil
         }
-        settingsStore?.disableEventAlarm(key: key)
+        settingsStore?.disableEventAlarm(key: key, attendance: attendance)
         showNextDueAlarmSoon()
     }
 
@@ -238,7 +239,7 @@ final class AlarmManager {
             isPaused: settingsStore.alarmsPaused,
             alertLeadMinutes: settingsStore.minutesBefore,
             countdownMinutes: settingsStore.countdownRange.minutesAhead(alertLeadMinutes: settingsStore.minutesBefore),
-            isAlarmEnabled: { event in event.alarmKey.map(settingsStore.isAlarmEnabled(key:)) ?? false }
+            isAlarmEnabled: { event in settingsStore.isAlarmEnabled(for: event) }
         )
     }
 
