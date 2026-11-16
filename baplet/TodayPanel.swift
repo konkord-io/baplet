@@ -119,8 +119,8 @@ enum TodayPanel {
             }
 
             if modifiers.isEmpty, event.charactersIgnoringModifiers?.lowercased() == "d" {
-                if let selected = model.selectedEvent, !selected.isAllDay, let key = selected.alarmKey {
-                    settingsStore.toggleEventAlarm(key: key)
+                if let selected = model.selectedEvent, !selected.isAllDay, selected.alarmKey != nil {
+                    settingsStore.toggleEventAlarm(for: selected)
                 }
                 return nil
             }
@@ -267,7 +267,7 @@ private struct TodayView: View {
         guard settingsStore.workingHours.isEnabled else { return false }
         return model.events.contains { event in
             guard !event.isAllDay, let key = event.alarmKey else { return false }
-            return settingsStore.isOutsideWorkingHours(key: key) && !settingsStore.isAlarmEnabled(key: key)
+            return settingsStore.isOutsideWorkingHours(key: key) && !settingsStore.isAlarmEnabled(for: event)
         }
     }
 

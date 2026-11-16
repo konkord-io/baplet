@@ -173,7 +173,7 @@ private struct AlertsPane: View {
 
         Form {
             Section {
-                SettingsHelpText("Choose how Baplet alerts you before an event starts, and try it out with Test Alert. You can also choose how early the menu bar counts down, the working hours Baplet alerts in, and how many days of events the menu shows.")
+                SettingsHelpText("Choose how Baplet alerts you before an event starts, and try it out with Test Alert. Declined and cancelled meetings don't alert unless you tick them. You can also choose how early the menu bar counts down, the working hours Baplet alerts in, and how many days of events the menu shows.")
             }
 
             Section {
@@ -185,6 +185,10 @@ private struct AlertsPane: View {
                 LabeledContent("Alert before event") {
                     ValueStepper(value: $settings.minutesBefore, range: 1...60, unit: "min", pluralUnit: "min")
                 }
+                LabeledContent("Days of events shown") {
+                    ValueStepper(value: $settings.daysToShow, range: 1...14, unit: "day", pluralUnit: "days")
+                }
+                Toggle("Alert for meetings I declined", isOn: $settings.alertForDeclinedMeetings)
                 LabeledContent("Test the selected alert style") {
                     Button("Test Alert") {
                         AlertService.showTestAlert(settings: settingsStore)
@@ -209,10 +213,9 @@ private struct AlertsPane: View {
                 SettingsHelpText(WorkingHoursHelp.text)
             }
 
-            Section {
-                LabeledContent("Days of events shown") {
-                    ValueStepper(value: $settings.daysToShow, range: 1...14, unit: "day", pluralUnit: "days")
-                }
+            Section("Focus (Experimental)") {
+                Toggle("Hold back alerts during Focus", isOn: $settings.holdAlertsDuringFocus)
+                SettingsHelpText("To choose which Focus holds back alerts, open System Settings → [Focus](x-apple.systempreferences:com.apple.Focus-Settings.extension), pick a Focus such as Do Not Disturb, and under Focus Filters add **Baplet** with Hold back alerts on. An alert that comes due during that Focus shows when it ends, if the meeting is still going.")
             }
         }
         .formStyle(.grouped)

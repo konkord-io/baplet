@@ -125,10 +125,24 @@ final class SettingsStore {
         didSet { defaults.set(Array(disabledEventAlarms), forKey: Keys.disabledEventAlarms) }
     }
 
-    /// `EKEvent.alarmKey`s of occurrences outside working hours whose alarm the user switched
-    /// on, since those are quiet by default. Keys of ended events are pruned.
+    /// `EKEvent.alarmKey`s of occurrences that are quiet by default (outside working hours,
+    /// declined or cancelled; see `isQuietByDefault`) whose alarm the user switched on. Keys of
+    /// ended events are pruned. The name predates declined and cancelled events; it is kept so
+    /// the stored key stays the same.
     var enabledOutsideHoursAlarms: Set<String> {
         didSet { defaults.set(Array(enabledOutsideHoursAlarms), forKey: Keys.enabledOutsideHoursAlarms) }
+    }
+
+    /// Whether meetings the user declined alert like any other. Off by default: a declined
+    /// meeting stays quiet unless switched on per occurrence.
+    var alertForDeclinedMeetings: Bool {
+        didSet { defaults.set(alertForDeclinedMeetings, forKey: Keys.alertForDeclinedMeetings) }
+    }
+
+    /// Whether a Focus with Baplet's Focus filter holds back alerts until it ends. Off by
+    /// default; the filter must also be added to the Focus in System Settings.
+    var holdAlertsDuringFocus: Bool {
+        didSet { defaults.set(holdAlertsDuringFocus, forKey: Keys.holdAlertsDuringFocus) }
     }
 
     /// When Baplet alerts by default; off until the user turns it on.
@@ -200,6 +214,8 @@ final class SettingsStore {
         static let daysToShow = "daysToShow"
         static let disabledEventAlarms = "disabledEventAlarmKeys"
         static let enabledOutsideHoursAlarms = "enabledOutsideHoursAlarmKeys"
+        static let alertForDeclinedMeetings = "alertForDeclinedMeetings"
+        static let holdAlertsDuringFocus = "holdAlertsDuringFocus"
         static let workingHoursEnabled = "workingHoursEnabled"
         static let workingHoursStart = "workingHoursStartMinutes"
         static let workingHoursEnd = "workingHoursEndMinutes"
@@ -256,6 +272,9 @@ final class SettingsStore {
         let storedDisabledAlarms = defaults.stringArray(forKey: Keys.disabledEventAlarms) ?? []
         self.disabledEventAlarms = Set(storedDisabledAlarms)
         self.enabledOutsideHoursAlarms = Set(defaults.stringArray(forKey: Keys.enabledOutsideHoursAlarms) ?? [])
+        self.alertForDeclinedMeetings = defaults.bool(forKey: Keys.alertForDeclinedMeetings)
+
+        self.holdAlertsDuringFocus = defaults.bool(forKey: Keys.holdAlertsDuringFocus)
 
         let standard = WorkingHours.standard
         self.workingHours = WorkingHours(
@@ -304,10 +323,11 @@ final class SettingsStore {
         }
     }
 
-    /// Switches the alarm of one event occurrence (by `EKEvent.alarmKey`) on or off. Inside
-    /// working hours alarms are on unless switched off; outside them, off unless switched on.
-    func toggleEventAlarm(key: String) {
-        if isOutsideWorkingHours(key: key) {
+    /// Switches the alarm of one event occurrence (by `EKEvent.alarmKey`) on or off. Occurrences
+    /// that are quiet by default (`isQuietByDefault`) are off unless switched on; all others
+    /// are on unless switched off. `attendance` is the occurrence's `EKEvent.attendance`.
+    func toggleEventAlarm(key: String, attendance: EventAttendance = .attending) {
+        if isQuietByDefault(key: key, attendance: attendance) {
             enabledOutsideHoursAlarms.formSymmetricDifference([key])
         } else {
             disabledEventAlarms.formSymmetricDifference([key])
@@ -315,21 +335,32 @@ final class SettingsStore {
     }
 
     /// Switches the alarm of one event occurrence off; used when its alert is dismissed.
-    func disableEventAlarm(key: String) {
-        if isOutsideWorkingHours(key: key) {
+    func disableEventAlarm(key: String, attendance: EventAttendance = .attending) {
+        if isQuietByDefault(key: key, attendance: attendance) {
             enabledOutsideHoursAlarms.remove(key)
         } else {
             disabledEventAlarms.insert(key)
         }
     }
 
-    /// Returns whether the alarm is enabled for one event occurrence: inside working hours
-    /// unless switched off, outside them only when switched on.
-    func isAlarmEnabled(key: String) -> Bool {
-        if isOutsideWorkingHours(key: key) {
+    /// Returns whether the alarm is enabled for one event occurrence: occurrences that are
+    /// quiet by default only when switched on, all others unless switched off.
+    func isAlarmEnabled(key: String, attendance: EventAttendance = .attending) -> Bool {
+        if isQuietByDefault(key: key, attendance: attendance) {
             return enabledOutsideHoursAlarms.contains(key)
         }
         return !disabledEventAlarms.contains(key)
+    }
+
+    /// Whether an occurrence stays silent unless the user switches its alarm on: it starts
+    /// outside working hours, was cancelled, or was declined while `alertForDeclinedMeetings`
+    /// is off. Cancelled meetings ignore that setting, since they aren't happening.
+    func isQuietByDefault(key: String, attendance: EventAttendance) -> Bool {
+        switch attendance {
+        case .canceled: true
+        case .declined: !alertForDeclinedMeetings || isOutsideWorkingHours(key: key)
+        case .attending: isOutsideWorkingHours(key: key)
+        }
     }
 
     /// Whether the occurrence behind `key` starts outside working hours, read from the start

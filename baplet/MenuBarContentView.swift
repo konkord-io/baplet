@@ -37,6 +37,10 @@ struct MenuBarContentView: View {
             header
                 .zIndex(1)
             Divider()
+            if FocusStatus.shared.holdsAlerts(settingEnabled: settingsStore.holdAlertsDuringFocus) {
+                focusNote
+                Divider()
+            }
             content
             if let update = updateService.availableUpdate {
                 Divider()
@@ -90,8 +94,8 @@ struct MenuBarContentView: View {
             }
 
             if modifiers.isEmpty, event.charactersIgnoringModifiers?.lowercased() == "d",
-               let selected, !selected.isAllDay, let key = selected.alarmKey {
-                settingsStore.toggleEventAlarm(key: key)
+               let selected, !selected.isAllDay, selected.alarmKey != nil {
+                settingsStore.toggleEventAlarm(for: selected)
                 return nil
             }
             return event
@@ -167,6 +171,16 @@ struct MenuBarContentView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    /// Line under the header while a Focus holds back alerts, so a missing alert isn't a surprise.
+    private var focusNote: some View {
+        Label("Focus is on \u{2014} alerts held until it ends", systemImage: "moon.fill")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
     }
 
     /// Main content area that adapts based on authorization status.

@@ -3,6 +3,7 @@
 //  bapletTests
 //
 
+import EventKit
 import Foundation
 import Testing
 @testable import Baplet
@@ -196,7 +197,80 @@ struct SettingsStoreTests {
             #expect(!store.workingHours.isEnabled)
             #expect(store.countdownRange == .allDay)
             #expect(store.enabledOutsideHoursAlarms.isEmpty)
+            #expect(!store.alertForDeclinedMeetings)
+            #expect(!store.holdAlertsDuringFocus)
         }
+    }
+
+    /// Checks that declined meetings are quiet unless switched on or allowed by the setting,
+    /// that cancelled meetings stay quiet whatever the setting, and that the setting survives
+    /// a reload.
+    @Test
+    func declinedAndCancelledMeetingsAreQuietByDefault() {
+        withDefaults { defaults in
+            let store = SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist)
+            let declined = EventAlarmKey.make(eventID: "d", start: localDate(day: 18, hour: 10))
+            let cancelled = EventAlarmKey.make(eventID: "c", start: localDate(day: 18, hour: 11))
+
+            #expect(store.isAlarmEnabled(key: declined))
+            #expect(!store.isAlarmEnabled(key: declined, attendance: .declined))
+            #expect(!store.isAlarmEnabled(key: cancelled, attendance: .canceled))
+
+            store.toggleEventAlarm(key: declined, attendance: .declined)
+            #expect(store.isAlarmEnabled(key: declined, attendance: .declined))
+            store.disableEventAlarm(key: declined, attendance: .declined)
+            #expect(!store.isAlarmEnabled(key: declined, attendance: .declined))
+
+            store.alertForDeclinedMeetings = true
+            #expect(store.isAlarmEnabled(key: declined, attendance: .declined))
+            #expect(!store.isAlarmEnabled(key: cancelled, attendance: .canceled))
+
+            let reloaded = SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist)
+            #expect(reloaded.alertForDeclinedMeetings)
+        }
+    }
+
+    /// Checks that a declined meeting outside working hours stays quiet even when declined
+    /// meetings are allowed to alert, since working hours still apply.
+    @Test
+    func declinedMeetingOutsideWorkingHoursStaysQuiet() {
+        withDefaults { defaults in
+            let store = SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist)
+            store.workingHours.isEnabled = true
+            store.alertForDeclinedMeetings = true
+            let outside = EventAlarmKey.make(eventID: "d", start: localDate(day: 21, hour: 10))
+            #expect(!store.isAlarmEnabled(key: outside, attendance: .declined))
+        }
+    }
+
+    /// Checks how the attendance is derived: cancellation wins over any response, and only the
+    /// user's own declined status counts as declined.
+    @Test
+    func attendanceFromEventState() {
+        #expect(EventAttendance(isCanceled: true, ownStatus: .accepted) == .canceled)
+        #expect(EventAttendance(isCanceled: false, ownStatus: .declined) == .declined)
+        #expect(EventAttendance(isCanceled: false, ownStatus: .tentative) == .attending)
+        #expect(EventAttendance(isCanceled: false, ownStatus: .pending) == .attending)
+        #expect(EventAttendance(isCanceled: false, ownStatus: nil) == .attending)
+    }
+
+    /// Checks that "Hold back alerts during Focus" survives a reload.
+    @Test
+    func holdAlertsDuringFocusSurvivesReload() {
+        withDefaults { defaults in
+            let store = SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist)
+            store.holdAlertsDuringFocus = true
+            #expect(SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist).holdAlertsDuringFocus)
+        }
+    }
+
+    /// Checks that alerts are held only when both the setting and a Focus filter ask for it.
+    @Test
+    func focusHoldsAlertsOnlyWithSettingAndFilter() {
+        #expect(FocusStatus.holdsAlerts(settingEnabled: true, filterHoldsAlerts: true))
+        #expect(!FocusStatus.holdsAlerts(settingEnabled: true, filterHoldsAlerts: false))
+        #expect(!FocusStatus.holdsAlerts(settingEnabled: false, filterHoldsAlerts: true))
+        #expect(!FocusStatus.holdsAlerts(settingEnabled: false, filterHoldsAlerts: false))
     }
 
     /// Checks that, with working hours on, meetings inside them alert unless switched off and

@@ -12,6 +12,7 @@ import SwiftUI
 /// A row view displaying a single calendar event with its title, time range,
 /// optional location, and a color indicator matching the event's calendar.
 /// Timed events get a checkbox that switches the alarm of this one occurrence on or off.
+/// Declined and cancelled meetings show their title struck through.
 struct CalendarEventRow: View {
     let event: EKEvent
 
@@ -44,6 +45,7 @@ struct CalendarEventRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(event.displayTitle)
                     .font(.headline)
+                    .strikethrough(event.attendance.isStruckThrough)
 
                 Text(event.isAllDay ? "All Day" : event.timeRangeText)
                     .font(.subheadline)
@@ -112,12 +114,12 @@ struct CalendarEventRow: View {
     /// `SettingsStore` (which persists it and is what `AlarmManager` checks before firing).
     /// Nil for all-day events and events without an alarm key, which get no checkbox.
     private var alarmEnabled: Binding<Bool>? {
-        guard !event.isAllDay, let key = event.alarmKey else { return nil }
+        guard !event.isAllDay, event.alarmKey != nil else { return nil }
         return Binding(
-            get: { settingsStore.isAlarmEnabled(key: key) },
+            get: { settingsStore.isAlarmEnabled(for: event) },
             set: { newValue in
-                if newValue != settingsStore.isAlarmEnabled(key: key) {
-                    settingsStore.toggleEventAlarm(key: key)
+                if newValue != settingsStore.isAlarmEnabled(for: event) {
+                    settingsStore.toggleEventAlarm(for: event)
                 }
             }
         )

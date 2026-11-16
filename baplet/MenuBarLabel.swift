@@ -62,6 +62,8 @@ struct MenuBarLabel: View {
             settingsStore.workingHours.weekdays,
             settingsStore.countdownRange,
             settingsStore.minutesBefore,
+            settingsStore.alertForDeclinedMeetings,
+            settingsStore.holdAlertsDuringFocus,
             settingsStore.disabledEventAlarms,
             settingsStore.enabledOutsideHoursAlarms,
         ]
@@ -84,6 +86,7 @@ struct MenuBarLabel: View {
             return
         }
         defer { updateService.startAutomaticChecks(settings: settingsStore) }
+        Task { await FocusStatus.shared.loadCurrent() }
         if !Self.registeredTodayShortcut {
             Self.registeredTodayShortcut = true
             KeyboardShortcuts.onKeyUp(for: .showToday) { [calendarService, settingsStore] in

@@ -26,6 +26,55 @@ extension EKEvent {
     var timeRangeText: String {
         EventTimeFormat.range(from: startDate, to: endDate)
     }
+
+    /// Whether the user is attending, declined (their own attendee entry says so) or the
+    /// event was cancelled, so declined and cancelled meetings don't alert by default.
+    var attendance: EventAttendance {
+        EventAttendance(
+            isCanceled: status == .canceled,
+            ownStatus: attendees?.first(where: \.isCurrentUser)?.participantStatus
+        )
+    }
+}
+
+/// The user's part in an event, deciding whether it alerts by default.
+enum EventAttendance: Equatable {
+    case attending
+    case declined
+    case canceled
+
+    /// Derives the attendance from the event's cancellation flag and the user's own
+    /// participant status (nil when the event has no attendees or the user isn't among them,
+    /// as with one's own private events). Cancellation wins over any response.
+    init(isCanceled: Bool, ownStatus: EKParticipantStatus?) {
+        if isCanceled {
+            self = .canceled
+        } else if ownStatus == .declined {
+            self = .declined
+        } else {
+            self = .attending
+        }
+    }
+
+    /// Whether the row shows the title struck through: the meeting is declined or cancelled.
+    var isStruckThrough: Bool {
+        self != .attending
+    }
+}
+
+extension SettingsStore {
+    /// Whether this occurrence's alarm is on, applying working hours, its attendance and the
+    /// user's per-occurrence choice. False for events without an alarm key.
+    func isAlarmEnabled(for event: EKEvent) -> Bool {
+        guard let key = event.alarmKey else { return false }
+        return isAlarmEnabled(key: key, attendance: event.attendance)
+    }
+
+    /// Switches this occurrence's alarm on or off (row checkbox, D key).
+    func toggleEventAlarm(for event: EKEvent) {
+        guard let key = event.alarmKey else { return }
+        toggleEventAlarm(key: key, attendance: event.attendance)
+    }
 }
 
 /// Builds and reads the per-occurrence keys behind `EKEvent.alarmKey`.
