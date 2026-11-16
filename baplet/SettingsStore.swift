@@ -139,6 +139,12 @@ final class SettingsStore {
         didSet { defaults.set(alertForDeclinedMeetings, forKey: Keys.alertForDeclinedMeetings) }
     }
 
+    /// Whether a Focus with Baplet's Focus filter holds back alerts until it ends. Off by
+    /// default; the filter must also be added to the Focus in System Settings.
+    var holdAlertsDuringFocus: Bool {
+        didSet { defaults.set(holdAlertsDuringFocus, forKey: Keys.holdAlertsDuringFocus) }
+    }
+
     /// When Baplet alerts by default; off until the user turns it on.
     var workingHours: WorkingHours {
         didSet {
@@ -209,6 +215,7 @@ final class SettingsStore {
         static let disabledEventAlarms = "disabledEventAlarmKeys"
         static let enabledOutsideHoursAlarms = "enabledOutsideHoursAlarmKeys"
         static let alertForDeclinedMeetings = "alertForDeclinedMeetings"
+        static let holdAlertsDuringFocus = "holdAlertsDuringFocus"
         static let workingHoursEnabled = "workingHoursEnabled"
         static let workingHoursStart = "workingHoursStartMinutes"
         static let workingHoursEnd = "workingHoursEndMinutes"
@@ -266,6 +273,8 @@ final class SettingsStore {
         self.disabledEventAlarms = Set(storedDisabledAlarms)
         self.enabledOutsideHoursAlarms = Set(defaults.stringArray(forKey: Keys.enabledOutsideHoursAlarms) ?? [])
         self.alertForDeclinedMeetings = defaults.bool(forKey: Keys.alertForDeclinedMeetings)
+
+        self.holdAlertsDuringFocus = defaults.bool(forKey: Keys.holdAlertsDuringFocus)
 
         let standard = WorkingHours.standard
         self.workingHours = WorkingHours(

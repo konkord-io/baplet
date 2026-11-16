@@ -198,6 +198,7 @@ struct SettingsStoreTests {
             #expect(store.countdownRange == .allDay)
             #expect(store.enabledOutsideHoursAlarms.isEmpty)
             #expect(!store.alertForDeclinedMeetings)
+            #expect(!store.holdAlertsDuringFocus)
         }
     }
 
@@ -251,6 +252,25 @@ struct SettingsStoreTests {
         #expect(EventAttendance(isCanceled: false, ownStatus: .tentative) == .attending)
         #expect(EventAttendance(isCanceled: false, ownStatus: .pending) == .attending)
         #expect(EventAttendance(isCanceled: false, ownStatus: nil) == .attending)
+    }
+
+    /// Checks that "Hold back alerts during Focus" survives a reload.
+    @Test
+    func holdAlertsDuringFocusSurvivesReload() {
+        withDefaults { defaults in
+            let store = SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist)
+            store.holdAlertsDuringFocus = true
+            #expect(SettingsStore(defaults: defaults, sandboxContainerPlist: missingPlist).holdAlertsDuringFocus)
+        }
+    }
+
+    /// Checks that alerts are held only when both the setting and a Focus filter ask for it.
+    @Test
+    func focusHoldsAlertsOnlyWithSettingAndFilter() {
+        #expect(FocusStatus.holdsAlerts(settingEnabled: true, filterHoldsAlerts: true))
+        #expect(!FocusStatus.holdsAlerts(settingEnabled: true, filterHoldsAlerts: false))
+        #expect(!FocusStatus.holdsAlerts(settingEnabled: false, filterHoldsAlerts: true))
+        #expect(!FocusStatus.holdsAlerts(settingEnabled: false, filterHoldsAlerts: false))
     }
 
     /// Checks that, with working hours on, meetings inside them alert unless switched off and

@@ -113,6 +113,7 @@ final class AlarmManager {
         self.calendarService = calendarService
         self.settingsStore = settingsStore
 
+        FocusStatus.shared.onChange = { [weak self] in self?.recheckNow() }
         checkAlarms(replaySound: false)
 
         timer?.invalidate()
@@ -127,7 +128,7 @@ final class AlarmManager {
     }
 
     /// Re-fetches events, forgets state of ended events, updates the menu bar icon and, unless
-    /// alarms are paused, either replays the open alert's sound (when `replaySound`, i.e. on a
+    /// alarms are paused or a Focus holds them back (`FocusStatus`), either replays the open alert's sound (when `replaySound`, i.e. on a
     /// timer tick) or shows the alert of the first due event when none is open.
     private func checkAlarms(replaySound: Bool) {
         guard let calendarService, let settingsStore else { return }
@@ -140,7 +141,8 @@ final class AlarmManager {
         settingsStore.pruneDisabledEventAlarms(keeping: Set(events.compactMap(\.alarmKey)), now: now)
         updateMenuBarStatus(events: events, now: now, settingsStore: settingsStore)
 
-        guard !settingsStore.alarmsPaused else { return }
+        guard !settingsStore.alarmsPaused,
+              !FocusStatus.shared.holdsAlerts(settingEnabled: settingsStore.holdAlertsDuringFocus) else { return }
 
         if activeAlarmKey != nil {
             if replaySound, settingsStore.soundEnabled {
