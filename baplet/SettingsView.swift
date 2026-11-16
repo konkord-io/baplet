@@ -185,6 +185,9 @@ private struct AlertsPane: View {
                 LabeledContent("Alert before event") {
                     ValueStepper(value: $settings.minutesBefore, range: 1...60, unit: "min", pluralUnit: "min")
                 }
+                LabeledContent("Days of events shown") {
+                    ValueStepper(value: $settings.daysToShow, range: 1...14, unit: "day", pluralUnit: "days")
+                }
                 Toggle("Alert for meetings I declined", isOn: $settings.alertForDeclinedMeetings)
                 LabeledContent("Test the selected alert style") {
                     Button("Test Alert") {
@@ -213,12 +216,6 @@ private struct AlertsPane: View {
             Section("Focus (Experimental)") {
                 Toggle("Hold back alerts during Focus", isOn: $settings.holdAlertsDuringFocus)
                 SettingsHelpText("To choose which Focus holds back alerts, open System Settings → [Focus](x-apple.systempreferences:com.apple.Focus-Settings.extension), pick a Focus such as Do Not Disturb, and under Focus Filters add **Baplet** with Hold back alerts on. An alert that comes due during that Focus shows when it ends, if the meeting is still going.")
-            }
-
-            Section {
-                LabeledContent("Days of events shown") {
-                    ValueStepper(value: $settings.daysToShow, range: 1...14, unit: "day", pluralUnit: "days")
-                }
             }
         }
         .formStyle(.grouped)
