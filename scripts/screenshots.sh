@@ -11,7 +11,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BIN="$ROOT/build/DerivedData/Build/Products/Debug/Baplet.app/Contents/MacOS/Baplet"
 OUT="$ROOT/site/assets/screenshots"
-SCENES=(menu today alert-popup alert-glass alert-bold alert-warm welcome-theme)
+SCENES=(menu menubar today alert-popup alert-glass alert-bold alert-warm welcome-theme)
 [[ $# -gt 0 ]] && SCENES=("$@")
 read -r -a APPEARANCES <<< "${APPEARANCES:-dark}"
 HEADS_UP="${HEADS_UP:-10}"
