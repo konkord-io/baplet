@@ -127,9 +127,10 @@ final class AlarmManager {
         checkAlarms(replaySound: false)
     }
 
-    /// Re-fetches events, forgets state of ended events, updates the menu bar icon and, unless
-    /// alarms are paused or a Focus holds them back (`FocusStatus`), either replays the open alert's sound (when `replaySound`, i.e. on a
-    /// timer tick) or shows the alert of the first due event when none is open.
+    /// Closes stray alert windows, re-fetches events, forgets state of ended events (closing
+    /// their alert), updates the menu bar icon and, unless alarms are paused or a Focus holds
+    /// them back (`FocusStatus`), either replays the open alert's sound (when `replaySound`,
+    /// i.e. on a timer tick) or shows the alert of the first due event when none is open.
     private func checkAlarms(replaySound: Bool) {
         guard let calendarService, let settingsStore else { return }
 
@@ -137,6 +138,7 @@ final class AlarmManager {
         let events = calendarService.events
         let now = AppClock.now()
 
+        AlertService.closeStrayPanels()
         cleanupStaleEntries(events: events, now: now)
         settingsStore.pruneDisabledEventAlarms(keeping: Set(events.compactMap(\.alarmKey)), now: now)
         updateMenuBarStatus(events: events, now: now, settingsStore: settingsStore)
@@ -246,7 +248,9 @@ final class AlarmManager {
     }
 
     /// Forgets snoozes and the active alert of events that have ended or are no longer
-    /// fetched, to prevent unbounded growth and let the next due alert take over.
+    /// fetched, to prevent unbounded growth and let the next due alert take over. The alert
+    /// window of such an event is closed too; if the event comes back while still running,
+    /// the next check shows it again.
     private func cleanupStaleEntries(events: [EKEvent], now: Date) {
         var endDates: [String: Date] = [:]
         for event in events {
@@ -262,6 +266,7 @@ final class AlarmManager {
         snoozedAlarms = snoozedAlarms.filter { isLive($0.key) }
         if let activeAlarmKey, !isLive(activeAlarmKey) {
             self.activeAlarmKey = nil
+            AlertService.closeActiveAlert(reason: "meeting ended")
         }
     }
 }

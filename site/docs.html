@@ -77,7 +77,7 @@ codesign -d -r- /Applications/Baplet.app 2&gt;&amp;1 | grep -o 'certificate root
         </div>
       </div>
       <p>Baplet reads your events from the macOS Calendar app, so it works with every account you've added there: iCloud, Google, Exchange and others. Pick which calendars it watches in Settings → Calendars. Your calendar data stays on your Mac; Baplet only contacts GitHub to check for updates.</p>
-      <p>A few minutes before a meeting starts (5 by default), Baplet puts an alert in front of you: a popup or a full-screen alert, in the style you choose, with an optional sound. The alert stays until you deal with it, and the sound repeats while it's open:</p>
+      <p>A few minutes before a meeting starts (5 by default), Baplet puts an alert in front of you: a popup or a full-screen alert, in the style you choose, with an optional sound. The alert stays until you deal with it or the meeting ends, and the sound repeats while it's open:</p>
       <ul>
         <li><strong>Open</strong> joins the meeting in your chosen browser, or opens the event in Calendar when it has no meeting link. Baplet recognises Google Meet, Zoom, Teams, Webex, GoTo Meeting and Slack huddles.</li>
         <li><strong>Snooze</strong> brings the alert back after 1 to 30 minutes. Closing the alert with its close button snoozes it for 5 minutes, so a meeting is never dropped by accident.</li>
@@ -122,7 +122,7 @@ codesign -d -r- /Applications/Baplet.app 2&gt;&amp;1 | grep -o 'certificate root
       <h3>In an alert</h3>
       <table class="keys">
         <tr><td><kbd>O</kbd> or <kbd>Return</kbd></td><td>Open: join the meeting, or open the event in Calendar</td></tr>
-        <tr><td><kbd>S</kbd></td><td>Snooze for 5 minutes</td></tr>
+        <tr><td><kbd>S</kbd> or <kbd>Esc</kbd></td><td>Snooze for 5 minutes</td></tr>
         <tr><td><kbd>D</kbd></td><td>Dismiss</td></tr>
       </table>
       <p class="docs-note">The keys only respond after the alert has been up for a second, so keys you were already typing in another app don't trigger anything.</p>
