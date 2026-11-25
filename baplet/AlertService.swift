@@ -7,6 +7,7 @@
 
 import AppKit
 import EventKit
+import os
 import SwiftUI
 
 /// Namespace providing static methods for presenting alarm alerts.
@@ -24,6 +25,11 @@ enum AlertService {
     /// Snoozes the alert on screen with the caller's own snooze action, without touching the
     /// panel. Run when the alert is replaced by another one; nil while no alert is showing.
     private static var snoozeActiveAlert: (() -> Void)?
+
+    /// Notice-level log of alert windows shown, actions taken and windows closed. macOS keeps
+    /// these on disk for days, so a stuck alert can be traced afterwards. Meeting titles are
+    /// never logged.
+    static let log = Logger(subsystem: "io.konkord.baplet", category: "alert")
 
     /// How long after an alert appears before its single-letter shortcuts respond, so keys
     /// already being typed into another app don't trigger an action by accident.
@@ -155,14 +161,18 @@ enum AlertService {
         let replacedAlertSnooze = snoozeActiveAlert
         closeActivePanel()
         replacedAlertSnooze?()
+        closeStrayPanels()
 
-        let panelProps = closingPanelFirst(props)
+        let owner = PanelOwner()
+        let panelProps = closingPanelFirst(props, owner: owner)
         let panel = style.isFullScreen
             ? makeFullScreenPanel(style: style, props: panelProps)
             : makePopupPanel(props: panelProps)
+        owner.panel = panel
 
         panel.onUserClose = { panelProps.onSnooze(AlertProps.defaultSnoozeMinutes) }
         panel.makeKeyAndOrderFront(nil)
+        log.notice("Alert shown: style=\(style.rawValue, privacy: .public) key=\(panel.isKeyWindow, privacy: .public) screen=\(panel.screen?.localizedName ?? "none", privacy: .public)")
         activePanel = panel
         snoozeActiveAlert = { props.onSnooze(AlertProps.defaultSnoozeMinutes) }
         installKeyShortcuts(for: panel, props: panelProps)
@@ -214,9 +224,11 @@ enum AlertService {
         return panel
     }
 
-    /// Returns a copy of `props` whose actions first close the alert panel. Opening the
-    /// meeting or the event also dismisses, so the alarm stops once the user has gone there.
-    private static func closingPanelFirst(_ props: AlertProps) -> AlertProps {
+    /// Returns a copy of `props` whose actions first close the alert's own panel (held by
+    /// `owner`), so its buttons always close the window they are in, even if Baplet has lost
+    /// track of it. Opening the meeting or the event also dismisses, so the alarm stops once
+    /// the user has gone there.
+    private static func closingPanelFirst(_ props: AlertProps, owner: PanelOwner) -> AlertProps {
         AlertProps(
             title: props.title,
             time: props.time,
@@ -224,24 +236,60 @@ enum AlertService {
             calendarName: props.calendarName,
             meetingLink: props.meetingLink,
             onDismiss: {
-                closeActivePanel()
+                log.notice("Alert action: dismiss")
+                close(owner.panel)
                 props.onDismiss()
             },
             onSnooze: { minutes in
-                closeActivePanel()
+                log.notice("Alert action: snooze \(minutes, privacy: .public) min")
+                close(owner.panel)
                 props.onSnooze(minutes)
             },
             onOpenMeeting: {
-                closeActivePanel()
+                log.notice("Alert action: open meeting")
+                close(owner.panel)
                 props.onDismiss()
                 props.onOpenMeeting()
             },
             onOpenInCalendar: {
-                closeActivePanel()
+                log.notice("Alert action: open in Calendar")
+                close(owner.panel)
                 props.onDismiss()
                 props.onOpenInCalendar()
             }
         )
+    }
+
+    /// Closes the given alert panel: through `closeActivePanel` when it is the active one,
+    /// otherwise directly, so a panel Baplet no longer tracks still goes away. Runs none of
+    /// the alert's actions.
+    private static func close(_ panel: AlertPanel?) {
+        guard let panel, panel !== activePanel else {
+            closeActivePanel()
+            return
+        }
+        log.notice("Closing untracked alert panel")
+        panel.onUserClose = nil
+        panel.close()
+    }
+
+    /// Closes the alert on screen without running any of its actions. Used when its meeting
+    /// has ended, so a forgotten full-screen alert can't stay up indefinitely.
+    static func closeActiveAlert(reason: String) {
+        guard activePanel != nil else { return }
+        log.notice("Alert closed by Baplet: \(reason, privacy: .public)")
+        closeActivePanel()
+    }
+
+    /// Closes every visible alert panel other than the active one. There should never be
+    /// any; this is a safety net run before each new alert and on every alarm check, so a
+    /// leftover full-screen panel can't block the screen.
+    static func closeStrayPanels() {
+        for case let panel as AlertPanel in NSApp.windows where panel !== activePanel && panel.isVisible {
+            log.error("Closing stray alert panel")
+            panel.onUserClose = nil
+            panel.close()
+        }
     }
 
     /// Closes and releases the currently active alert panel, if one exists, and stops its
@@ -255,11 +303,12 @@ enum AlertService {
         if panel.isVisible {
             panel.close()
         }
+        log.notice("Alert closed")
     }
 
     /// Listens for the alert's keyboard shortcuts while its panel is key:
-    /// O or Return opens (meeting if there is a link, otherwise Calendar), D dismisses and
-    /// S snoozes for the default time. Keys pressed within `shortcutArmDelay` of the alert
+    /// O or Return opens (meeting if there is a link, otherwise Calendar), D dismisses, and
+    /// S or Escape snoozes for the default time; Escape is the way out when clicks don't land. Keys pressed within `shortcutArmDelay` of the alert
     /// appearing are swallowed and ignored; any other key passes through untouched.
     private static func installKeyShortcuts(for panel: AlertPanel, props: AlertProps) {
         let armedAt = Date().addingTimeInterval(shortcutArmDelay)
@@ -268,9 +317,11 @@ enum AlertService {
                 return event
             }
             let isReturn = event.isReturnKey
+            let isEscape = event.keyCode == KeyCode.escape
             let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
-            guard isReturn || ["o", "d", "s"].contains(key) else { return event }
+            guard isReturn || isEscape || ["o", "d", "s"].contains(key) else { return event }
             guard Date() >= armedAt else { return nil }
+            log.notice("Alert key: \(isEscape ? "escape" : isReturn ? "return" : key, privacy: .public)")
 
             if isReturn || key == "o" {
                 props.openDefault()
@@ -282,6 +333,12 @@ enum AlertService {
             return nil
         }
     }
+}
+
+/// Weak reference from an alert's actions to the panel they belong to, filled in once the
+/// panel exists (its view needs the actions first).
+private final class PanelOwner {
+    weak var panel: AlertPanel?
 }
 
 /// Alert panel that can become the key window even when borderless, so the full-screen
