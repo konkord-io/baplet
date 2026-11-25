@@ -36,6 +36,7 @@ enum DemoMode {
     /// The views that can be opened for capture.
     enum Scene: String {
         case menu, today
+        case menuBar = "menubar"
         case alertPopup = "alert-popup"
         case alertGlass = "alert-glass"
         case alertBold = "alert-bold"
@@ -109,6 +110,8 @@ enum DemoMode {
             TodayPanel.show(calendarService: calendarService, settingsStore: settingsStore)
         } else if scene == .menu {
             showMenuWindow(calendarService: calendarService, settingsStore: settingsStore)
+        } else if scene == .menuBar {
+            showMenuBarStrip()
         }
     }
 
@@ -169,6 +172,23 @@ enum DemoMode {
         window.level = .floating
         window.isReleasedWhenClosed = false
         window.setContentSize(hosting.view.fittingSize)
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    /// Shows `DemoMenuBarStrip` in an ordinary window, since the real menu bar sits under the
+    /// backdrop and holds the owner's own items.
+    @MainActor
+    private static func showMenuBarStrip() {
+        let hosting = NSHostingController(rootView: DemoMenuBarStrip().ignoresSafeArea())
+        hosting.sizingOptions = []
+        let window = NSWindow(contentViewController: hosting)
+        window.styleMask = [.titled, .fullSizeContentView]
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.level = .floating
+        window.isReleasedWhenClosed = false
+        window.setContentSize(DemoMenuBarStrip.size)
         window.center()
         window.makeKeyAndOrderFront(nil)
     }
