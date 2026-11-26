@@ -40,6 +40,7 @@ struct WarmPlayfulAlertView: View {
                 Text(props.calendarName)
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.45))
+                OverlapNotice(meetings: props.overlapping, onDarkBackground: true)
             }
 
             HStack(spacing: 16) {

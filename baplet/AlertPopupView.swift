@@ -40,6 +40,7 @@ struct AlertPopupView: View {
                 Text(props.calendarName)
                     .font(.caption)
                     .foregroundStyle(.tertiary)
+                OverlapNotice(meetings: props.overlapping)
             }
 
             HStack(spacing: 12) {

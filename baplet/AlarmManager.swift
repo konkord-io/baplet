@@ -7,6 +7,7 @@
 
 import EventKit
 import Foundation
+import os
 
 /// Represents the current state of the menu bar icon.
 enum MenuBarStatus: Equatable {
@@ -183,6 +184,9 @@ final class AlarmManager {
         }
 
         let meetingLink = AlertService.extractMeetingLink(from: event)
+        let overlapping = overlappingEvents(with: event, settingsStore: settingsStore)
+        let overlappingKeys = overlapping.compactMap(\.alarmKey)
+        let end = event.endDate ?? AppClock.now()
         AlertService.show(
             style: settingsStore.alertStyle,
             props: AlertProps(
@@ -193,15 +197,51 @@ final class AlarmManager {
                 meetingLink: meetingLink,
                 onDismiss: { [weak self] in self?.dismiss(key: key, attendance: attendance) },
                 onSnooze: { [weak self] minutes in self?.snooze(key: key, minutes: minutes) },
-                onOpenMeeting: {
+                onOpenMeeting: { [weak self] in
+                    self?.hold(keys: overlappingKeys, until: end)
                     if let meetingLink {
                         BrowserService.openMeeting(meetingLink.url, settings: settingsStore)
                     }
                 },
-                onOpenInCalendar: { AlertService.openEventInCalendar(event) }
+                onOpenInCalendar: { [weak self] in
+                    self?.hold(keys: overlappingKeys, until: end)
+                    AlertService.openEventInCalendar(event)
+                },
+                overlapping: overlapping.map { other in
+                    OverlappingMeeting(
+                        id: other.alarmKey ?? other.displayTitle,
+                        title: other.displayTitle,
+                        timeRange: other.timeRangeText,
+                        calendarColor: other.calendar?.cgColor
+                    )
+                }
             )
         )
         activeAlarmKey = key
+    }
+
+    /// The fetched meetings that overlap `event` in time and would alert themselves (timed,
+    /// alarm on, so declined, cancelled and quiet meetings are left out), sorted by start.
+    private func overlappingEvents(with event: EKEvent, settingsStore: SettingsStore) -> [EKEvent] {
+        guard let calendarService, let key = event.alarmKey, let start = event.startDate, let end = event.endDate else { return [] }
+        let candidates = calendarService.events.filter { !$0.isAllDay && settingsStore.isAlarmEnabled(for: $0) }
+        let slots = candidates.compactMap { other -> MeetingOverlap.Slot? in
+            guard let otherKey = other.alarmKey, let otherStart = other.startDate, let otherEnd = other.endDate else { return nil }
+            return MeetingOverlap.Slot(key: otherKey, start: otherStart, end: otherEnd)
+        }
+        let overlappingKeys = MeetingOverlap.overlapping(MeetingOverlap.Slot(key: key, start: start, end: end), in: slots).map(\.key)
+        return overlappingKeys.compactMap { overlapKey in candidates.first { $0.alarmKey == overlapKey } }
+    }
+
+    /// Holds the alerts of the given occurrences until `date` (the end of the meeting the user
+    /// just joined), through the snooze list: one still running then alerts, one over by then
+    /// never does. A longer existing snooze is kept.
+    private func hold(keys: [String], until date: Date) {
+        guard !keys.isEmpty else { return }
+        for key in keys {
+            snoozedAlarms[key] = max(snoozedAlarms[key] ?? date, date)
+        }
+        AlertService.log.notice("Held \(keys.count, privacy: .public) overlapping meeting(s) until the joined one ends")
     }
 
     /// Stops the alarm of one occurrence for good by switching it off in settings, then shows
