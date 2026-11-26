@@ -40,6 +40,7 @@ struct GlassmorphicAlertView: View {
                 Text(props.calendarName)
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.4))
+                OverlapNotice(meetings: props.overlapping, onDarkBackground: true)
             }
 
             HStack(spacing: 16) {

@@ -19,6 +19,8 @@ struct AlertProps {
     let onSnooze: (Int) -> Void
     let onOpenMeeting: () -> Void
     let onOpenInCalendar: () -> Void
+    /// Other meetings whose time overlaps this one, listed in the alert (`OverlapNotice`).
+    var overlapping: [OverlappingMeeting] = []
 
     /// Snooze durations in minutes offered in every alert's snooze dropdown.
     static let snoozeDurations = [1, 3, 5, 10, 15, 20, 30]

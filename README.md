@@ -25,6 +25,7 @@ Baplet is free. If it helps you, [sponsor it on GitHub](https://github.com/spons
   - Glassmorphic (frosted glass card)
   - Bold & Minimal (large typography, no card)
   - Warm & Playful (gradient card with hero image)
+- **Overlap warning** — an alert lists other meetings at the same time; join one and the others wait until it ends
 - **Smart snooze** — snooze alerts for 1, 3, 5, 10, 15, 20, or 30 minutes
 - **Meeting link detection** — automatically detects Google Meet, Zoom, Teams, Webex, GoTo Meeting, and Slack Huddle links
 - **Open in Calendar** — jump straight to the event in Apple Calendar

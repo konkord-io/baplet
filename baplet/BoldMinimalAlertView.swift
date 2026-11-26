@@ -46,6 +46,7 @@ struct BoldMinimalAlertView: View {
                     Text(props.calendarName)
                         .font(.body)
                         .foregroundStyle(.white.opacity(0.3))
+                    OverlapNotice(meetings: props.overlapping, onDarkBackground: true)
                 }
 
                 HStack(spacing: 20) {

@@ -174,6 +174,7 @@ enum AlertService {
         panel.makeKeyAndOrderFront(nil)
         log.notice("Alert shown: style=\(style.rawValue, privacy: .public) key=\(panel.isKeyWindow, privacy: .public) screen=\(panel.screen?.localizedName ?? "none", privacy: .public)")
         activePanel = panel
+        refocusIfNeeded(panel)
         snoozeActiveAlert = { props.onSnooze(AlertProps.defaultSnoozeMinutes) }
         installKeyShortcuts(for: panel, props: panelProps)
     }
@@ -192,7 +193,7 @@ enum AlertService {
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
 
-        let hostingView = NSHostingView(rootView: AlertPopupView(props: props))
+        let hostingView = FirstClickHostingView(rootView: AlertPopupView(props: props))
         hostingView.sizingOptions = []
         panel.setContentSize(hostingView.fittingSize)
         panel.contentView = hostingView
@@ -218,7 +219,7 @@ enum AlertService {
         panel.isOpaque = false
         panel.backgroundColor = NSColor.black.withAlphaComponent(0.85)
 
-        let hostingView = NSHostingView(rootView: FullScreenAlertRouter(style: style, props: props))
+        let hostingView = FirstClickHostingView(rootView: FullScreenAlertRouter(style: style, props: props))
         hostingView.sizingOptions = []
         panel.contentView = hostingView
         return panel
@@ -256,7 +257,8 @@ enum AlertService {
                 close(owner.panel)
                 props.onDismiss()
                 props.onOpenInCalendar()
-            }
+            },
+            overlapping: props.overlapping
         )
     }
 
@@ -271,6 +273,19 @@ enum AlertService {
         log.notice("Closing untracked alert panel")
         panel.onUserClose = nil
         panel.close()
+    }
+
+    /// Gives the alert keyboard focus again shortly after it appears, if another app took it
+    /// in the meantime (for example a browser coming forward with a meeting the user just
+    /// joined), so its keys work without a click first.
+    private static func refocusIfNeeded(_ panel: AlertPanel) {
+        for delay in [0.6, 1.5] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                guard panel === activePanel, panel.isVisible, !panel.isKeyWindow else { return }
+                panel.makeKey()
+                log.notice("Alert refocused: key=\(panel.isKeyWindow, privacy: .public)")
+            }
+        }
     }
 
     /// Closes the alert on screen without running any of its actions. Used when its meeting
@@ -333,6 +348,14 @@ enum AlertService {
             return nil
         }
     }
+}
+
+/// Hosting view for alert panels that takes the first click even while the panel isn't the
+/// key window, so a button reacts on the first click after another app took focus instead of
+/// that click only focusing the panel.
+private final class FirstClickHostingView<Content: View>: NSHostingView<Content> {
+    /// Lets a click on an unfocused alert press the button under it.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
 /// Weak reference from an alert's actions to the panel they belong to, filled in once the
